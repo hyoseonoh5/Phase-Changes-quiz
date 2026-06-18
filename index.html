@@ -397,7 +397,8 @@ button{font-family:inherit;cursor:pointer}
         <div id="tScores" style="margin-top:8px"></div>
       </div>
 
-      <button class="btn ghost sm" id="tClose" style="width:100%;margin-top:14px">닫기</button>
+      <button class="btn" id="tClearAll" style="width:100%;margin-top:14px;background:#ef4444">🗑 모든 기록 초기화</button>
+      <button class="btn ghost sm" id="tClose" style="width:100%;margin-top:8px">닫기</button>
     </div>
   </div>
 </div>
@@ -535,8 +536,15 @@ const DB = (() => {
     if(useGAS){ await gasCall('setScore',{ban,num,data}); return; }
     if(fdb){ await ready; await fdb.ref('scores/'+sanitize(ban+'-'+num)).set(data);} else { await set('score:'+ban+'-'+num, data);}
   }
+  async function clearAll(){
+    if(useGAS){ return await gasCall('clearAll',{}); }
+    await ready;
+    if(fdb){ await fdb.ref('scores').remove(); await fdb.ref('students').remove(); return {ok:true}; }
+    if(hasWS){ try{ for(const pre of ['score:','student:']){ const r=await window.storage.list(pre,true); if(r) for(const k of r.keys){ try{await window.storage.delete(k,true);}catch(e){} } } }catch(e){} return {ok:true}; }
+    for(const k in mem){ if(k.startsWith('score:')||k.startsWith('student:')) delete mem[k]; } return {ok:true};
+  }
 
-  return { mode: useGAS?'gas':(useFB?'firebase':(hasWS?'shared':'memory')), getStudent, setStudent, listStudents, resetStudentPw, listScores, onScores, setScore };
+  return { mode: useGAS?'gas':(useFB?'firebase':(hasWS?'shared':'memory')), getStudent, setStudent, listStudents, resetStudentPw, listScores, onScores, setScore, clearAll };
 })();
 
 /* ===================== 입자모형 SVG ===================== */
@@ -687,6 +695,15 @@ $('#tPin').addEventListener('keydown',e=>{ if(e.key==='Enter') $('#tEnter').clic
 
 $('#tBan').onchange=loadTeacherScores;
 $('#tRefreshScores').onclick=loadTeacherScores;
+$('#tClearAll').onclick=async ()=>{
+  if(!confirm('모든 학생의 점수·기록을 전부 삭제할까요?\n이 작업은 되돌릴 수 없어요.')) return;
+  if(!confirm('정말 초기화할까요? (마지막 확인)')) return;
+  const btn=$('#tClearAll'); btn.disabled=true; const t=btn.textContent; btn.textContent='초기화 중...';
+  try{ await DB.clearAll(); alert('모든 기록을 초기화했어요.'); }
+  catch(err){ alert('초기화 실패: '+err.message); }
+  btn.disabled=false; btn.textContent=t;
+  loadTeacherScores();
+};
 
 /* 제출 결과 · 랭킹 (이미 제출된 것만) */
 async function loadTeacherScores(){
