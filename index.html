@@ -203,7 +203,6 @@ button{font-family:inherit;cursor:pointer}
     <div id="userArea" class="hidden">
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
         <span class="userchip"><span class="who">학생</span><b id="uName">-</b></span>
-        <button class="btn ghost sm" id="btnChangePw">비밀번호 변경</button>
         <button class="btn ghost sm" id="btnLogout">로그아웃</button>
       </div>
     </div>
@@ -220,16 +219,14 @@ button{font-family:inherit;cursor:pointer}
     <div class="card" style="max-width:480px;margin:30px auto 0">
       <div class="eyebrow">로그인</div>
       <h2>나의 정보로 입장하기</h2>
-      <p class="lead">반·번호·이름을 고르고 들어오세요. 처음 비밀번호는 <b>7777</b> 입니다.</p>
+      <p class="lead">반·번호·이름을 고르고 들어오세요.</p>
       <div class="login-grid">
         <div class="field"><label>반</label><select id="inBan"></select></div>
         <div class="field"><label>번호</label><select id="inNum"></select></div>
         <div class="field full"><label>이름</label><input id="inName" type="text" placeholder="이름"></div>
-        <div class="field full"><label>비밀번호</label><input id="inPw" type="password" inputmode="numeric" placeholder="처음에는 7777"></div>
       </div>
       <div class="msg" id="loginMsg"></div>
       <button class="btn" id="btnLogin" style="width:100%;margin-top:6px">입장하기</button>
-      <div class="hint" style="margin-top:12px">처음에는 비밀번호 <b>7777</b> 로 들어와요. 들어오면 바로 <b>나만의 비밀번호(생일 4자리)</b> 로 바꾸게 됩니다.</div>
       <div style="text-align:center;margin-top:14px"><button class="btn ghost sm" id="btnTeacher">교사용 대시보드</button></div>
     </div>
   </section>
@@ -390,23 +387,14 @@ button{font-family:inherit;cursor:pointer}
 
     <div id="tPanel" class="hidden">
       <div class="field" style="margin-top:6px"><label>반 선택</label><select id="tBan"></select></div>
-      <div class="tsub">
-        <button class="tsubbtn active" data-sub="scores">제출 결과 · 랭킹</button>
-        <button class="tsubbtn" data-sub="pw">학생 비번 초기화</button>
-      </div>
 
       <div id="tScoresView">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px">
           <p class="lead" style="margin:0">제출한 학생만 모아서 보여줘요.</p>
           <button class="btn sm" id="tRefreshScores">새로고침</button>
         </div>
         <div id="tScoreSummary" class="tsummary"></div>
         <div id="tScores" style="margin-top:8px"></div>
-      </div>
-
-      <div id="tPwView" class="hidden">
-        <p class="lead" style="margin-top:6px">비밀번호를 잊은 학생을 <b>7777</b> 로 초기화해요. (초기화하면 다음 로그인 때 생일 4자리로 다시 정합니다.)</p>
-        <div id="tStudents" style="margin-top:6px"></div>
       </div>
 
       <button class="btn ghost sm" id="tClose" style="width:100%;margin-top:14px">닫기</button>
@@ -454,17 +442,20 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbxojdpWU3rf5izmp9qmEylF
 const DB = (() => {
   const useGAS = !!GAS_URL;
   async function gasCall(action, payload){
-    let res;
-    try{
-      res = await fetch(GAS_URL, { method:'POST', body: JSON.stringify({action, ...payload}) });
-    }catch(e){ throw new Error('서버에 연결할 수 없어요. (인터넷/주소 확인)'); }
-    if(!res.ok) throw new Error('서버 응답 오류 ('+res.status+')');
-    const text = await res.text();
-    let data;
-    try{ data = JSON.parse(text); }
-    catch(e){ throw new Error('서버가 올바른 응답을 주지 않았어요. 배포 권한을 "모든 사용자"로 했는지 확인하세요.'); }
-    if(data && data.error) throw new Error('서버 오류: '+data.error);
-    return data;
+    let lastErr;
+    for(let attempt=0; attempt<2; attempt++){ // 일시적 실패 시 1회 재시도
+      try{
+        const res = await fetch(GAS_URL, { method:'POST', body: JSON.stringify({action, ...payload}) });
+        if(!res.ok) throw new Error('서버 응답 오류 ('+res.status+')');
+        const text = await res.text();
+        let data;
+        try{ data = JSON.parse(text); }
+        catch(e){ throw new Error('서버가 올바른 응답을 주지 않았어요. 배포 권한을 "모든 사용자"로 했는지 확인하세요.'); }
+        if(data && data.error) throw new Error('서버 오류: '+data.error);
+        return data;
+      }catch(e){ lastErr=e; if(attempt===0) await new Promise(r=>setTimeout(r,800)); }
+    }
+    throw lastErr || new Error('서버에 연결할 수 없어요. (인터넷/주소 확인)');
   }
   const useFB = FIREBASE_CONFIG && FIREBASE_CONFIG.databaseURL;
   let fdb = null, ready = Promise.resolve();
@@ -635,93 +626,39 @@ function sceneSVG(id){ return `<svg viewBox="0 0 170 160" width="100%" height="1
 let USER=null; // {ban,num,name}
 let CURRENT_REC=null; // 로그인한 학생의 현재 기록 (서버 재조회 없이 사용)
 const $=s=>document.querySelector(s); const $$=s=>[...document.querySelectorAll(s)];
+// 전각(폭 넓은) 숫자·기호를 일반(반각)으로 변환 — 한글 IME에서 친 비번도 정상 처리
+function toHalf(s){ return String(s==null?'':s).replace(/[\uFF01-\uFF5E]/g, c=> String.fromCharCode(c.charCodeAt(0)-0xFEE0)).replace(/\u3000/g,' '); }
 function show(page){
   ['login','missions','dm'].forEach(p=> $('#page-'+p).classList.add('hidden'));
   $('#page-'+page).classList.remove('hidden');
 }
 function setTab(n){ $$('.tab').forEach(t=> t.classList.toggle('active', t.dataset.go==String(n))); }
 
-/* ===================== 로그인 ===================== */
-$('#btnLogin').onclick = async ()=>{
-  const ban=$('#inBan').value, num=$('#inNum').value, name=$('#inName').value.trim(), pw=$('#inPw').value.trim();
+/* ===================== 로그인 (비밀번호 없이 반·번호·이름) ===================== */
+$('#btnLogin').onclick = ()=>{
+  const ban=$('#inBan').value, num=$('#inNum').value, name=$('#inName').value.trim();
   const msg=$('#loginMsg'); msg.className='msg err';
   if(!ban||!num||!name){ msg.textContent='반·번호·이름을 모두 고르고 입력하세요.'; return; }
-  if(!pw){ msg.textContent='비밀번호를 입력하세요. (처음에는 7777)'; return; }
-  msg.className='msg'; msg.textContent='확인 중...';
-  let rec;
-  try{
-    rec = await DB.getStudent(ban,num);
-    if(!rec){
-      if(pw!=='7777'){ msg.className='msg err'; msg.textContent='처음 입장할 때 비밀번호는 7777 이에요.'; return; }
-      rec={pw:'7777',name,mustChange:true}; await DB.setStudent(ban,num,rec);
-    } else {
-      if(rec.pw!==pw){ msg.className='msg err'; msg.textContent='비밀번호가 맞지 않아요.'; return; }
-      if(rec.name!==name){ rec.name=name; await DB.setStudent(ban,num,rec); } // 이름 갱신 허용
-    }
-  }catch(err){
-    msg.className='msg err'; msg.textContent=err.message; return;
-  }
   msg.textContent='';
-  USER={ban,num,name}; CURRENT_REC=rec;
+  USER={ban,num,name};
   $('#uName').textContent=`${ban}반 ${num}번 ${name}`;
   $('#userArea').classList.remove('hidden'); $('#tabs').classList.remove('hidden');
   setTab(1); show('missions'); buildMission1(); buildMission2();
-  // 처음 7777 이거나 초기화된 경우 → 바로 비번 변경(생일 4자리) 강제
-  if(rec.pw==='7777' || rec.mustChange){ openPwModal(true); }
 };
-$('#inPw').addEventListener('keydown',e=>{ if(e.key==='Enter') $('#btnLogin').click(); });
+$('#inName').addEventListener('keydown',e=>{ if(e.key==='Enter') $('#btnLogin').click(); });
 
-$('#btnLogout').onclick = ()=>{ USER=null; $('#userArea').classList.add('hidden'); $('#tabs').classList.add('hidden'); show('login'); $('#inPw').value=''; $('#loginMsg').textContent=''; };
-
-/* ---------- 비밀번호 변경 (forced=처음/초기화 후) ---------- */
-function openPwModal(forced){
-  $('#pwOld').value=''; $('#pwNew').value=''; $('#pwMsg').textContent='';
-  $('#pwOldField').classList.toggle('hidden', !!forced);
-  $('#pwCancel').classList.toggle('hidden', !!forced);
-  if(forced){
-    $('#pwTitle').textContent='나만의 비밀번호 만들기';
-    $('#pwGuide').textContent='처음 들어왔어요! 비밀번호를 본인 생일 4자리(예: 3월 17일 → 0317)로 바꿔주세요.';
-    $('#pwNewLabel').textContent='새 비밀번호 (생일 4자리)';
-    $('#pwSave').textContent='이 비밀번호로 시작하기';
-  } else {
-    $('#pwTitle').textContent='비밀번호 변경';
-    $('#pwGuide').textContent='비밀번호는 본인 생일 4자리(예: 0317)를 추천해요.';
-    $('#pwNewLabel').textContent='새 비밀번호 (생일 4자리)';
-    $('#pwSave').textContent='저장';
-  }
-  $('#pwBack').dataset.forced = forced?'1':'';
-  $('#pwBack').classList.remove('hidden');
-}
-$('#btnChangePw').onclick=()=> openPwModal(false);
-$('#pwCancel').onclick=()=> $('#pwBack').classList.add('hidden');
-$('#pwSave').onclick= async ()=>{
-  const m=$('#pwMsg'); m.className='msg err';
-  const forced = $('#pwBack').dataset.forced==='1';
-  const np=$('#pwNew').value.trim();
-  if(!/^\d{4}$/.test(np)){ m.textContent='생일 4자리 숫자로 정해주세요. (예: 0317)'; return; }
-  if(np==='7777'){ m.textContent='7777 말고 본인 생일 4자리로 정해주세요.'; return; }
-  try{
-    let rec = CURRENT_REC;
-    if(!forced){
-      // 일반 변경: 현재 비번 확인을 위해 최신 기록 조회
-      rec = await DB.getStudent(USER.ban,USER.num);
-      if(!rec){ m.textContent='학생 정보를 찾을 수 없어요.'; return; }
-      if(rec.pw!==$('#pwOld').value.trim()){ m.textContent='현재 비밀번호가 맞지 않아요.'; return; }
-    }
-    rec = rec || {name:USER.name};
-    rec.name=USER.name; rec.pw=np; rec.mustChange=false;
-    await DB.setStudent(USER.ban,USER.num,rec);
-    CURRENT_REC=rec;
-  }catch(err){ m.textContent=err.message; return; }
-  m.className='msg ok'; m.textContent='완료! 이제 이 비밀번호로 로그인해요.';
-  setTimeout(()=> $('#pwBack').classList.add('hidden'), 900);
-};
+$('#btnLogout').onclick = ()=>{ USER=null; $('#userArea').classList.add('hidden'); $('#tabs').classList.add('hidden'); show('login'); $('#loginMsg').textContent=''; };
 
 /* ---------- 셀렉트 채우기 ---------- */
 function fillSelect(sel, max, suffix){
   sel.innerHTML='<option value="">선택</option>';
   for(let i=1;i<=max;i++){ const o=document.createElement('option'); o.value=i; o.textContent=i+suffix; sel.appendChild(o); }
 }
+/* 전각→반각 즉시 변환 (입력하는 동안 화면에서도 일반 숫자로 보이게) */
+['#inPw','#pwNew','#pwOld','#tPin'].forEach(sel=>{
+  const el=$(sel); if(!el) return;
+  el.addEventListener('input', ()=>{ const h=toHalf(el.value); if(h!==el.value){ const p=el.selectionStart; el.value=h; try{el.setSelectionRange(p,p);}catch(e){} } });
+});
 fillSelect($('#inBan'),BAN_MAX,'반');
 fillSelect($('#inNum'),NUM_MAX,'번');
 
@@ -738,25 +675,17 @@ function fillTeacherBan(){
   for(let i=1;i<=BAN_MAX;i++){ const o=document.createElement('option'); o.value=i; o.textContent=i+'반'; sel.appendChild(o); }
 }
 $('#tEnter').onclick=async ()=>{
-  const entered=$('#tPin').value.trim();
+  const entered=toHalf($('#tPin').value).trim();
   const h=await sha256(entered);
   if(h===null){ $('#tMsg').className='msg err'; $('#tMsg').textContent='이 기능은 HTTPS(또는 깃허브 페이지)에서만 동작해요.'; return; }
   if(h!==TEACHER_PIN_HASH){ $('#tMsg').className='msg err'; $('#tMsg').textContent='PIN이 맞지 않아요.'; return; }
   $('#tLogin').classList.add('hidden'); $('#tPanel').classList.remove('hidden');
   fillTeacherBan(); $('#tBan').value='all';
-  setTeacherSub('scores'); loadTeacherScores();
+  loadTeacherScores();
 };
 $('#tPin').addEventListener('keydown',e=>{ if(e.key==='Enter') $('#tEnter').click(); });
 
-let teacherSub='scores';
-function setTeacherSub(s){
-  teacherSub=s;
-  $$('.tsubbtn').forEach(b=> b.classList.toggle('active', b.dataset.sub===s));
-  $('#tScoresView').classList.toggle('hidden', s!=='scores');
-  $('#tPwView').classList.toggle('hidden', s!=='pw');
-}
-$$('.tsubbtn').forEach(b=> b.onclick=()=>{ setTeacherSub(b.dataset.sub); b.dataset.sub==='scores'?loadTeacherScores():loadTeacherList(); });
-$('#tBan').onchange=()=>{ teacherSub==='scores'?loadTeacherScores():loadTeacherList(); };
+$('#tBan').onchange=loadTeacherScores;
 $('#tRefreshScores').onclick=loadTeacherScores;
 
 /* 제출 결과 · 랭킹 (이미 제출된 것만) */
