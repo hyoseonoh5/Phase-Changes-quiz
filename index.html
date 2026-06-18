@@ -449,7 +449,7 @@ const NUM_MAX = 32;   // 1~32번
    Google Apps Script 웹앱 URL  (배포 후 받은 .../exec 주소를 붙여넣으세요)
    비워두면 미리보기용 로컬 모드로 동작합니다.
 ===================================================================== */
-const GAS_URL = "https://script.google.com/macros/s/AKfycbydhWc3gqhw8JEGM7Hmf7PE_0S3_mOKXoCNrn0h8gfUF-SHvfQSvuzsX8VShPomm2IO/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyeNYgWVXvqHRvG30S1-DhQ4RrNbjS6zCgZbvDzoY838olXESjLVRo2eENC9NvymM5m/exec";
 
 const DB = (() => {
   const useGAS = !!GAS_URL;
@@ -768,8 +768,14 @@ async function loadTeacherScores(){
   catch(err){ sum.innerHTML=''; box.innerHTML='<p class="msg err" style="margin:0">'+err.message+'</p>'; return; }
   let list = ban==='all'? all : all.filter(r=> String(r.ban)===String(ban));
   const cnt=list.length;
-  const avg=cnt? (list.reduce((a,r)=>a+(+r.score||0),0)/cnt) : 0;
-  const max=cnt? Math.max(...list.map(r=>+r.score||0)) : 0;
+  if(cnt===0){
+    sum.innerHTML='';
+    box.innerHTML='<p class="lead" style="margin:0">아직 제출한 학생이 없어요. 학생이 데스매치를 <b>최종 제출</b>하면 여기에 모여요. '
+      + '(연결 상태: <b>'+DB.mode+'</b> · gas 가 아니면 시트와 연결이 안 된 거예요.)</p>';
+    return;
+  }
+  const avg=(list.reduce((a,r)=>a+(+r.score||0),0)/cnt);
+  const max=Math.max(...list.map(r=>+r.score||0));
   sum.innerHTML=`<div class="stat"><b>${cnt}</b><small>제출 인원</small></div>
     <div class="stat"><b>${avg.toFixed(1)}</b><small>평균 점수</small></div>
     <div class="stat"><b>${max}</b><small>최고 점수</small></div>`;
@@ -1017,7 +1023,7 @@ async function finishDM(){
   $('#resLine').textContent = `27문제 중 ${dm.score}문제를 정확히 맞혔어요.`;
   // 점수 저장
   try{ await DB.setScore(USER.ban,USER.num,{ban:USER.ban,num:USER.num,name:USER.name,score:dm.score,ts:Date.now()}); }
-  catch(err){ $('#resLine').textContent += ` (점수 저장 실패: ${err.message})`; }
+  catch(err){ $('#resLine').textContent += ` (점수 저장 실패: ${err.message})`; alert('점수 저장에 실패했어요.\n'+err.message+'\n\n연결 상태: '+DB.mode); }
   // 피드백
   const fb=$('#fbList'); fb.innerHTML='';
   if(wrong.length===0){ $('#fbLead').textContent='틀린 문제가 없어요. 완벽해요! 🎉'; }
@@ -1045,7 +1051,7 @@ function renderRank(list, sel, markMe){
   list = (list||[]).slice().sort((a,b)=> b.score-a.score || a.ts-b.ts);
   const box=$(sel); box.innerHTML='';
   if(list.length===0){ box.innerHTML='<p class="lead" style="margin:0">아직 제출한 친구가 없어요.</p>'; return; }
-  list.slice(0,30).forEach((r,i)=>{
+  list.slice(0,200).forEach((r,i)=>{
     const me = markMe && USER && r.ban==USER.ban && r.num==USER.num;
     const cls = i===0?'gold':i===1?'silver':i===2?'bronze':'';
     const row=document.createElement('div'); row.className='rank-row '+cls+(me?' me':'');
