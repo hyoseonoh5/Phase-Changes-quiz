@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>물질의 상태 변화 퀴즈</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
+<style>
+:root{
+  --bg:#eef3fb; --card:#ffffff; --ink:#1f2a44; --muted:#6b7a99;
+  --solid:#3b82f6; --liquid:#06b6d4; --gas:#f59e0b;
+  --gold:#f7b500; --green:#22c55e; --red:#ef4444;
+  --line:#e3e9f3; --shadow:0 10px 30px rgba(31,42,68,.10);
+  --r:18px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:"Pretendard","Pretendard Variable",system-ui,sans-serif;
+  background:
+    radial-gradient(1200px 600px at 10% -10%, #dceafe 0%, transparent 55%),
+    radial-gradient(900px 500px at 110% 0%, #fdeccd 0%, transparent 50%),
+    var(--bg);
+  color:var(--ink); min-height:100vh;
+  -webkit-tap-highlight-color:transparent;
+}
+.wrap{max-width:920px;margin:0 auto;padding:18px 16px 60px}
+.hidden{display:none!important}
+button{font-family:inherit;cursor:pointer}
+.btn{
+  border:none;border-radius:14px;padding:13px 18px;font-size:16px;font-weight:700;
+  background:var(--ink);color:#fff;box-shadow:0 6px 16px rgba(31,42,68,.18);transition:transform .08s,filter .15s;
+}
+.btn:hover{filter:brightness(1.06)} .btn:active{transform:translateY(1px)}
+.btn.ghost{background:#fff;color:var(--ink);border:1.5px solid var(--line);box-shadow:none}
+.btn.gold{background:linear-gradient(135deg,#ffcb3d,#f59e0b);color:#5b3d00}
+.btn.sm{padding:9px 13px;font-size:14px;border-radius:11px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+/* header */
+.topbar{display:flex;align-items:center;gap:12px;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:11px}
+.logo{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--solid),var(--gas));display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow)}
+.brand h1{font-size:18px;margin:0;letter-spacing:-.4px}
+.brand p{margin:0;font-size:12px;color:var(--muted)}
+.userchip{display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid var(--line);border-radius:999px;padding:6px 8px 6px 14px;font-size:13px;font-weight:600}
+.userchip .who{color:var(--muted);font-weight:600}
+
+/* tabs */
+.tabs{display:flex;gap:8px;margin-bottom:16px}
+.tab{flex:1;border:1.5px solid var(--line);background:#fff;border-radius:14px;padding:11px;text-align:center;font-weight:800;font-size:14px;color:var(--muted)}
+.tab.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+.tab small{display:block;font-weight:600;font-size:11px;opacity:.8;margin-top:2px}
+
+/* cards */
+.card{background:var(--card);border:1.5px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:22px}
+.card + .card{margin-top:16px}
+.eyebrow{font-size:12px;font-weight:800;letter-spacing:.12em;color:var(--gas);text-transform:uppercase}
+.card h2{margin:6px 0 4px;font-size:21px;letter-spacing:-.5px}
+.card .lead{margin:0 0 14px;color:var(--muted);font-size:14px;line-height:1.5}
+
+/* login */
+.login-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field.full{grid-column:1/-1}
+.field label{font-size:13px;font-weight:700;color:var(--muted)}
+.field input,.field select{border:1.5px solid var(--line);border-radius:12px;padding:13px 14px;font-size:16px;font-family:inherit;background:#fbfcfe}
+.field select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7a99' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
+.field input:focus,.field select:focus{outline:none;border-color:var(--solid);background:#fff}
+.hint{font-size:12.5px;color:var(--muted);background:#f4f7fc;border:1px dashed var(--line);border-radius:12px;padding:11px 13px;line-height:1.5}
+.msg{font-size:13.5px;font-weight:700;margin-top:6px;min-height:18px}
+.msg.err{color:var(--red)} .msg.ok{color:var(--green)}
+
+/* mission stepper */
+.steps{display:flex;gap:8px;margin-bottom:14px}
+.dot{flex:1;height:8px;border-radius:99px;background:var(--line)}
+.dot.on{background:var(--gas)}
+.dot.done{background:var(--green)}
+
+/* mission1 triangle */
+.lab{position:relative;width:100%;max-width:560px;margin:0 auto;aspect-ratio:1/.92}
+.zone{position:absolute;width:154px;height:154px;border-radius:50%;border:3px dashed var(--line);background:#fff;display:flex;align-items:center;justify-content:center;transition:.15s}
+.zone .zlabel{position:absolute;top:-12px;background:#fff;padding:2px 12px;border-radius:99px;font-weight:800;font-size:14px;border:2px solid var(--line)}
+.zone[data-state=solid] .zlabel{color:var(--solid);border-color:var(--solid)}
+.zone[data-state=liquid] .zlabel{color:var(--liquid);border-color:var(--liquid)}
+.zone[data-state=gas] .zlabel{color:var(--gas);border-color:var(--gas)}
+.zone.over{border-color:var(--gas);background:#fff8ec;transform:scale(1.04)}
+.zone.filled{border-style:solid}
+.zone.correct{border-color:var(--green);background:#effdf3}
+.zone.wrong{border-color:var(--red);background:#fef2f2;animation:shake .35s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.z-solid{left:calc(50% - 77px);top:0}
+.z-liquid{left:0;bottom:0}
+.z-gas{right:0;bottom:0}
+
+.tray{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+.pcard{width:152px;height:152px;border-radius:18px;border:1.5px solid var(--line);background:#fbfcfe;box-shadow:var(--shadow);cursor:grab;touch-action:none;display:flex;align-items:center;justify-content:center;position:relative}
+.pcard:active{cursor:grabbing}
+.pcard.used{opacity:.25;pointer-events:none}
+.pcard .ptag{position:absolute;bottom:7px;font-size:12px;color:var(--muted);font-weight:700}
+.dragging{position:fixed;z-index:999;pointer-events:none;opacity:.95;transform:scale(.9)}
+
+/* mission2 arrows */
+.diagram{position:relative;width:100%;max-width:600px;margin:0 auto;aspect-ratio:1/.95}
+.node{position:absolute;width:96px;height:96px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:17px;box-shadow:var(--shadow)}
+.node.solid{background:linear-gradient(135deg,#60a5fa,#2563eb)}
+.node.liquid{background:linear-gradient(135deg,#22d3ee,#0891b2)}
+.node.gas{background:linear-gradient(135deg,#fbbf24,#ea8c0a)}
+.n-solid{left:calc(50% - 48px);top:0}
+.n-liquid{left:0;bottom:0}
+.n-gas{right:0;bottom:0}
+.blank{position:absolute;width:62px;transform:translate(-50%,-50%)}
+.blank input{width:100%;text-align:center;border:2px solid var(--line);border-radius:11px;padding:8px 2px;font-size:15px;font-weight:800;font-family:inherit;background:#fff;color:var(--ink);box-shadow:0 3px 10px rgba(31,42,68,.16)}
+.blank input:focus{outline:none;border-color:var(--gas)}
+.blank input.correct{border-color:var(--green);background:#effdf3;color:#15803d}
+.blank input.wrong{border-color:var(--red);background:#fef2f2;color:#b91c1c}
+.bank{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:16px 0 4px}
+.chip{border:1.5px solid var(--line);background:#fff;border-radius:99px;padding:8px 15px;font-weight:800;font-size:14px;color:var(--ink)}
+.chip:active{transform:translateY(1px)}
+
+/* reward card */
+.reward-back{position:fixed;inset:0;background:rgba(20,28,48,.55);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;animation:fade .2s}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.reward{background:#fff;border-radius:26px;padding:30px 26px;max-width:360px;width:100%;text-align:center;box-shadow:0 30px 70px rgba(0,0,0,.3);animation:pop .35s cubic-bezier(.2,1.3,.5,1)}
+@keyframes pop{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+.reward .medal{width:96px;height:96px;margin:0 auto 10px}
+.reward h3{font-size:26px;margin:6px 0 4px;background:linear-gradient(135deg,#f59e0b,#ef4444);-webkit-background-clip:text;background-clip:text;color:transparent}
+.reward p{color:var(--muted);margin:0 0 18px;font-size:14px}
+.spark{position:absolute;width:10px;height:10px;border-radius:2px;pointer-events:none}
+
+/* deathmatch */
+.dm-hud{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.timer{font-weight:900;font-size:30px;letter-spacing:-1px;font-variant-numeric:tabular-nums}
+.timer.warn{color:var(--red);animation:pulse .6s infinite}
+@keyframes pulse{50%{opacity:.5}}
+.pill{background:#fff;border:1.5px solid var(--line);border-radius:99px;padding:8px 15px;font-weight:800;font-size:14px}
+.pill b{color:var(--gas)}
+.progress{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin-bottom:16px}
+.progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--solid),var(--gas));transition:width .3s}
+.qcard{text-align:center}
+.qscene{width:170px;height:170px;margin:4px auto 6px}
+.qno{font-size:14px;font-weight:800;color:var(--muted);letter-spacing:.1em}
+.qtext{font-size:24px;font-weight:800;margin:8px 0 20px;line-height:1.4;letter-spacing:-.4px}
+.ans-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;max-width:560px;margin:0 auto}
+.ans{border:2px solid var(--line);background:#fff;border-radius:14px;padding:18px 4px;font-weight:800;font-size:19px;color:var(--ink);transition:.12s}
+.ans:hover{border-color:var(--gas)}
+.ans.sel{background:var(--ink);color:#fff;border-color:var(--ink)}
+.dm-controls{display:flex;gap:10px;justify-content:center;margin-top:20px;flex-wrap:wrap}
+
+/* ranking */
+.rank-row{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:13px;border:1.5px solid var(--line);margin-top:8px;background:#fff;transition:.2s}
+.rank-row.me{border-color:var(--gas);background:#fff8ec}
+.rank-row .pos{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:900;background:var(--line);color:var(--ink);font-size:14px}
+.rank-row.gold .pos{background:#ffd75e} .rank-row.silver .pos{background:#dbe2ec} .rank-row.bronze .pos{background:#f0c39a}
+.rank-row .rname{flex:1;font-weight:700;font-size:14px}
+.rank-row .rname small{color:var(--muted);font-weight:600;margin-left:6px}
+.rank-row .rscore{font-weight:900;font-size:16px;color:var(--gas)}
+.live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:6px;animation:pulse 1.2s infinite}
+
+/* feedback */
+.fb-row{display:flex;align-items:center;gap:14px;padding:15px 14px;border-radius:14px;border:1.5px solid var(--line);margin-top:10px;background:#fff}
+.fb-row .fb-ico{width:60px;height:60px;flex:none}
+.fb-row .fb-txt{flex:1;font-size:17px;font-weight:700;line-height:1.4}
+.fb-row .ansline{margin-top:8px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.fb-row .mine{color:var(--red);font-weight:800;text-decoration:line-through;font-size:18px}
+.fb-row .corr{color:var(--green);font-weight:900;font-size:26px;letter-spacing:-.5px}
+.fb-row .corr::before{content:"정답 ";font-size:13px;color:var(--muted);font-weight:700;letter-spacing:0}
+
+.trow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 12px;border:1.5px solid var(--line);border-radius:12px;margin-top:8px;background:#fff}
+.trow .tinfo b{font-size:15px} .trow .tinfo small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.tsub{display:flex;gap:6px;margin-top:12px}
+.tsubbtn{flex:1;border:1.5px solid var(--line);background:#fff;border-radius:11px;padding:9px;font-weight:800;font-size:13px;color:var(--muted);font-family:inherit;cursor:pointer}
+.tsubbtn.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+.tsummary{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.tsummary .stat{flex:1;min-width:90px;background:#f4f7fc;border:1px solid var(--line);border-radius:11px;padding:9px 11px;text-align:center}
+.tsummary .stat b{display:block;font-size:20px;color:var(--gas)} .tsummary .stat small{color:var(--muted);font-size:12px}
+
+@media(max-width:560px){
+  .login-grid{grid-template-columns:1fr}
+  .ans-grid{grid-template-columns:repeat(3,1fr)}
+  .zone{width:128px;height:128px}.z-solid{left:calc(50% - 64px)}
+  .pcard{width:122px;height:122px}
+  .node{width:84px;height:84px;font-size:15px}.n-solid{left:calc(50% - 42px)}
+  .qtext{font-size:21px}.ans{font-size:17px;padding:15px 3px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HEADER -->
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="6" cy="17" r="3" fill="#fff"/><circle cx="12" cy="7" r="3" fill="#fff" opacity=".85"/><circle cx="18" cy="17" r="3" fill="#fff" opacity=".7"/></svg>
+      </div>
+      <div>
+        <h1>물질의 상태 변화</h1>
+        <p>입자모형 · 상태 변화 · 데스매치 퀴즈</p>
+      </div>
+    </div>
+    <div id="userArea" class="hidden">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+        <span class="userchip"><span class="who">학생</span><b id="uName">-</b></span>
+        <button class="btn ghost sm" id="btnChangePw">비밀번호 변경</button>
+        <button class="btn ghost sm" id="btnLogout">로그아웃</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABS (after login) -->
+  <div class="tabs hidden" id="tabs">
+    <div class="tab active" data-go="1">1단계 · 미션<small>입자모형 & 상태 변화</small></div>
+    <div class="tab" data-go="2">2단계 · 데스매치<small>상태 변화 이름 맞히기</small></div>
+  </div>
+
+  <!-- ====================== PAGE 0 : LOGIN ====================== -->
+  <section id="page-login">
+    <div class="card" style="max-width:480px;margin:30px auto 0">
+      <div class="eyebrow">로그인</div>
+      <h2>나의 정보로 입장하기</h2>
+      <p class="lead">반·번호·이름을 고르고 들어오세요. 처음 비밀번호는 <b>7777</b> 입니다.</p>
+      <div class="login-grid">
+        <div class="field"><label>반</label><select id="inBan"></select></div>
+        <div class="field"><label>번호</label><select id="inNum"></select></div>
+        <div class="field full"><label>이름</label><input id="inName" type="text" placeholder="이름"></div>
+        <div class="field full"><label>비밀번호</label><input id="inPw" type="password" inputmode="numeric" placeholder="처음에는 7777"></div>
+      </div>
+      <div class="msg" id="loginMsg"></div>
+      <button class="btn" id="btnLogin" style="width:100%;margin-top:6px">입장하기</button>
+      <div class="hint" style="margin-top:12px">처음에는 비밀번호 <b>7777</b> 로 들어와요. 들어오면 바로 <b>나만의 비밀번호(생일 4자리)</b> 로 바꾸게 됩니다.</div>
+      <div style="text-align:center;margin-top:14px"><button class="btn ghost sm" id="btnTeacher">교사용 대시보드</button></div>
+    </div>
+  </section>
+
+  <!-- ====================== PAGE 1 : MISSIONS ====================== -->
+  <section id="page-missions" class="hidden">
+    <div class="steps">
+      <div class="dot on" id="sd1"></div>
+      <div class="dot" id="sd2"></div>
+    </div>
+
+    <!-- Mission 1 -->
+    <div class="card" id="mission1">
+      <div class="eyebrow">미션 1</div>
+      <h2>입자모형을 알맞은 상태에 놓기</h2>
+      <p class="lead">아래 입자모형 3개를 드래그해서 <b>고체·액체·기체</b> 칸에 알맞게 올려놓으세요.</p>
+      <div class="lab">
+        <div class="zone z-solid" data-state="solid"><span class="zlabel">고체</span></div>
+        <div class="zone z-liquid" data-state="liquid"><span class="zlabel">액체</span></div>
+        <div class="zone z-gas" data-state="gas"><span class="zlabel">기체</span></div>
+      </div>
+      <div class="tray" id="tray"></div>
+      <div style="text-align:center;margin-top:18px">
+        <button class="btn gold" id="btnCheck1">정답 확인</button>
+        <button class="btn ghost sm" id="btnReset1" style="margin-left:8px">다시 놓기</button>
+      </div>
+    </div>
+
+    <!-- Mission 2 -->
+    <div class="card hidden" id="mission2">
+      <div class="eyebrow">미션 2</div>
+      <h2>상태 변화의 이름을 적기</h2>
+      <p class="lead">화살표 방향에 맞는 상태 변화 이름을 빈칸에 적으세요. 아래 단어를 눌러도 채울 수 있어요.</p>
+      <div class="diagram" id="diagram">
+        <svg id="arrowSvg" viewBox="0 0 600 570" style="position:absolute;inset:0;width:100%;height:100%"></svg>
+        <div class="node solid n-solid">고체</div>
+        <div class="node liquid n-liquid">액체</div>
+        <div class="node gas n-gas">기체</div>
+        <!-- blanks injected by JS -->
+      </div>
+      <div class="bank" id="bank"></div>
+      <div style="text-align:center;margin-top:10px">
+        <button class="btn gold" id="btnCheck2">정답 확인</button>
+        <button class="btn ghost sm" id="btnReset2" style="margin-left:8px">지우기</button>
+      </div>
+    </div>
+
+    <div class="card hidden" id="missionDone" style="text-align:center">
+      <div class="medal" style="width:70px;margin:0 auto 6px">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="14" r="7" fill="#ffd75e" stroke="#f59e0b" stroke-width="1.5"/><path d="M8 2l2 5M16 2l-2 5" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/><path d="M9.5 14l1.7 1.7 3.3-3.4" stroke="#a85b00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+      </div>
+      <h2 style="margin-bottom:2px">1단계 미션 완료!</h2>
+      <p class="lead" style="margin-bottom:16px">이제 2단계 데스매치에 도전해 볼까요?</p>
+      <button class="btn" id="btnGoDM">2단계 데스매치 시작 →</button>
+    </div>
+  </section>
+
+  <!-- ====================== PAGE 2 : DEATH MATCH ====================== -->
+  <section id="page-dm" class="hidden">
+
+    <!-- intro -->
+    <div class="card" id="dmIntro" style="text-align:center">
+      <div class="eyebrow">2단계 · 데스매치</div>
+      <h2>상태 변화 이름 맞히기 ⏱ 1분 30초</h2>
+      <p class="lead">제한 시간 <b>1분 30초</b> 동안 최대한 많은 문제를 정확히 맞혀요.<br>모르는 문제는 <b>다음 문제</b>로 넘길 수 있고, <b>최종 제출</b>하면 틀린 문제의 정답을 알려줘요.</p>
+      <button class="btn gold" id="btnStartDM" style="font-size:18px;padding:15px 30px">시작!</button>
+    </div>
+
+    <!-- play -->
+    <div id="dmPlay" class="hidden">
+      <div class="dm-hud">
+        <div class="timer" id="dmTimer">1:30</div>
+        <div style="display:flex;gap:8px">
+          <span class="pill">맞힘 <b id="dmScore">0</b></span>
+          <span class="pill"><span id="dmIdx">1</span> / <span id="dmTotal">27</span></span>
+        </div>
+      </div>
+      <div class="progress"><i id="dmProgress" style="width:0%"></i></div>
+      <div class="card qcard">
+        <div class="qno" id="qNo">문제 1</div>
+        <div class="qscene" id="qScene"></div>
+        <div class="qtext" id="qText">—</div>
+        <div class="ans-grid" id="ansGrid"></div>
+        <div class="dm-controls">
+          <button class="btn" id="btnNext">다음 문제 →</button>
+          <button class="btn ghost" id="btnSubmit">최종 제출</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- result -->
+    <div id="dmResult" class="hidden">
+      <div class="card" style="text-align:center">
+        <div class="eyebrow">결과</div>
+        <h2 id="resTitle">수고했어요!</h2>
+        <p class="lead" id="resLine">—</p>
+      </div>
+
+      <div class="card">
+        <h2 style="font-size:18px;margin-top:0">🏅 우리 반 랭킹</h2>
+        <div id="rankList"></div>
+        <button class="btn ghost sm" id="btnRefreshRank" style="margin-top:12px">랭킹 새로고침</button>
+      </div>
+
+      <div class="card" id="fbCard">
+        <h2 style="font-size:18px;margin-top:0">틀린 문제 정답 확인</h2>
+        <p class="lead" id="fbLead" style="margin-bottom:6px">—</p>
+        <div id="fbList"></div>
+      </div>
+
+      <div style="text-align:center;margin-top:16px">
+        <button class="btn" id="btnRetryDM">다시 도전</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- reward overlay -->
+<div class="reward-back hidden" id="rewardBack">
+  <div class="reward" id="rewardCard">
+    <div class="medal" id="rewardMedal"></div>
+    <h3 id="rewardTitle">최고에요!</h3>
+    <p id="rewardSub">미션을 완벽하게 해결했어요</p>
+    <button class="btn gold" id="rewardOk" style="width:100%">계속하기</button>
+  </div>
+</div>
+
+<!-- password change modal -->
+<div class="reward-back hidden" id="pwBack">
+  <div class="reward" style="max-width:360px;text-align:left">
+    <h3 id="pwTitle" style="background:none;-webkit-text-fill-color:initial;color:var(--ink);font-size:20px;text-align:center">비밀번호 변경</h3>
+    <p id="pwGuide" class="hint" style="margin-top:8px"></p>
+    <div class="field" id="pwOldField" style="margin-top:10px"><label>현재 비밀번호</label><input id="pwOld" type="password" inputmode="numeric"></div>
+    <div class="field" style="margin-top:10px"><label id="pwNewLabel">새 비밀번호</label><input id="pwNew" type="password" inputmode="numeric" maxlength="8" placeholder="생일 4자리 (예: 0317)"></div>
+    <div class="msg" id="pwMsg"></div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn ghost" id="pwCancel" style="flex:1">취소</button>
+      <button class="btn" id="pwSave" style="flex:1">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- teacher dashboard modal -->
+<div class="reward-back hidden" id="tBack">
+  <div class="reward" style="max-width:440px;text-align:left;max-height:88vh;overflow:auto">
+    <h3 style="background:none;-webkit-text-fill-color:initial;color:var(--ink);font-size:20px;text-align:center">교사용 대시보드</h3>
+
+    <div id="tLogin">
+      <p class="hint" style="margin-top:8px">교사 PIN을 입력하세요.</p>
+      <div class="field" style="margin-top:8px"><label>교사 PIN</label><input id="tPin" type="password" inputmode="numeric"></div>
+      <div class="msg" id="tMsg"></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn ghost" id="tCancel" style="flex:1">닫기</button>
+        <button class="btn" id="tEnter" style="flex:1">입장</button>
+      </div>
+    </div>
+
+    <div id="tPanel" class="hidden">
+      <div class="field" style="margin-top:6px"><label>반 선택</label><select id="tBan"></select></div>
+      <div class="tsub">
+        <button class="tsubbtn active" data-sub="scores">제출 결과 · 랭킹</button>
+        <button class="tsubbtn" data-sub="pw">학생 비번 초기화</button>
+      </div>
+
+      <div id="tScoresView">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px">
+          <p class="lead" style="margin:0">제출한 학생만 모아서 보여줘요.</p>
+          <button class="btn sm" id="tRefreshScores">새로고침</button>
+        </div>
+        <div id="tScoreSummary" class="tsummary"></div>
+        <div id="tScores" style="margin-top:8px"></div>
+      </div>
+
+      <div id="tPwView" class="hidden">
+        <p class="lead" style="margin-top:6px">비밀번호를 잊은 학생을 <b>7777</b> 로 초기화해요. (초기화하면 다음 로그인 때 생일 4자리로 다시 정합니다.)</p>
+        <div id="tStudents" style="margin-top:6px"></div>
+      </div>
+
+      <button class="btn ghost sm" id="tClose" style="width:100%;margin-top:14px">닫기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   FIREBASE 설정 (선택)
+   아래 값을 채우면 → 비밀번호·점수가 모든 기기에 저장되고 랭킹이 실시간으로 공유돼요.
+   비워두면 → 이 브라우저 안에서만 동작하는 테스트 모드로 실행됩니다.
+   (Firebase 콘솔 > 프로젝트 설정 > 웹앱 의 firebaseConfig 를 그대로 붙여넣으세요.
+    Realtime Database 를 만들고 databaseURL 도 꼭 포함하세요.)
+===================================================================== */
+const FIREBASE_CONFIG = {
+  // apiKey: "...",
+  // authDomain: "...",
+  // databaseURL: "https://your-project-default-rtdb.firebaseio.com",
+  // projectId: "...",
+  // appId: "..."
+};
+
+/* =====================================================================
+   교사 PIN  — 평문 대신 SHA-256 해시로 저장 (소스에 PIN이 그대로 노출되지 않음)
+   현재 PIN의 해시입니다. PIN을 바꾸려면 새 PIN의 SHA-256 해시로 교체하세요.
+===================================================================== */
+const TEACHER_PIN_HASH = "e240826a3e44ab5a1ab51b645223372bbc43d0caf70f59242c94494566a62e3b";
+
+async function sha256(str){
+  if(!(window.crypto && crypto.subtle)) return null; // 보안 컨텍스트(HTTPS) 필요
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+const BAN_MAX = 11;   // 1~11반
+const NUM_MAX = 32;   // 1~32번
+
+/* =====================================================================
+   Google Apps Script 웹앱 URL  (배포 후 받은 .../exec 주소를 붙여넣으세요)
+   비워두면 미리보기용 로컬 모드로 동작합니다.
+===================================================================== */
+const GAS_URL = "https://script.google.com/macros/s/AKfycbydhWc3gqhw8JEGM7Hmf7PE_0S3_mOKXoCNrn0h8gfUF-SHvfQSvuzsX8VShPomm2IO/exec";
+
+const DB = (() => {
+  const useGAS = !!GAS_URL;
+  async function gasCall(action, payload){
+    try{
+      const res = await fetch(GAS_URL, { method:'POST', body: JSON.stringify({action, ...payload}) });
+      const data = await res.json();
+      return data;
+    }catch(e){ console.error('GAS 통신 오류', e); return null; }
+  }
+  const useFB = FIREBASE_CONFIG && FIREBASE_CONFIG.databaseURL;
+  let fdb = null, ready = Promise.resolve();
+  if (useFB) {
+    ready = new Promise(res => {
+      const s1 = document.createElement('script');
+      s1.src = 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js';
+      s1.onload = () => {
+        const s2 = document.createElement('script');
+        s2.src = 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js';
+        s2.onload = () => { firebase.initializeApp(FIREBASE_CONFIG); fdb = firebase.database(); res(); };
+        document.head.appendChild(s2);
+      };
+      document.head.appendChild(s1);
+    });
+  }
+  const hasWS = (typeof window.storage !== 'undefined' && window.storage && window.storage.get);
+  const mem = {};
+  const sanitize = k => k.replace(/[.#$/\[\]]/g,'_');
+
+  async function get(key){
+    await ready;
+    if(fdb){ const s = await fdb.ref(sanitize(key)).get(); return s.exists()? s.val():null; }
+    if(hasWS){ try{const r=await window.storage.get(key,true); return r? JSON.parse(r.value):null;}catch(e){return null;} }
+    return mem[key] ?? null;
+  }
+  async function set(key,val){
+    await ready;
+    if(fdb){ await fdb.ref(sanitize(key)).set(val); return; }
+    if(hasWS){ try{await window.storage.set(key, JSON.stringify(val), true);}catch(e){} return; }
+    mem[key]=val;
+  }
+  async function listScores(){
+    if(useGAS){ const r=await gasCall('listScores',{}); return (r&&r.list)||[]; }
+    await ready;
+    if(fdb){ const s = await fdb.ref('scores').get(); return s.exists()? Object.values(s.val()):[]; }
+    if(hasWS){
+      try{ const r=await window.storage.list('score:',true); if(!r) return [];
+        const out=[]; for(const k of r.keys){ try{const v=await window.storage.get(k,true); if(v) out.push(JSON.parse(v.value));}catch(e){} }
+        return out;
+      }catch(e){return [];}
+    }
+    return Object.keys(mem).filter(k=>k.startsWith('score:')).map(k=>mem[k]);
+  }
+  function onScores(cb){
+    if(fdb){ ready.then(()=> fdb.ref('scores').on('value', s=> cb(s.exists()? Object.values(s.val()):[]) )); return true; }
+    return false; // 실시간 구독 불가 → 폴링으로 대체
+  }
+  async function setStudent(ban,num,data){
+    if(useGAS){ await gasCall('setStudent',{ban,num,data}); return; }
+    if(fdb){ await ready; await fdb.ref('students/'+sanitize(ban+'-'+num)).set(data); return; }
+    await set('student:'+ban+'-'+num, data);
+  }
+  async function getStudent(ban,num){
+    if(useGAS){ const r=await gasCall('getStudent',{ban,num}); return r? (r.student||null) : null; }
+    if(fdb){ await ready; const s=await fdb.ref('students/'+sanitize(ban+'-'+num)).get(); return s.exists()? s.val():null; }
+    return await get('student:'+ban+'-'+num);
+  }
+  async function listStudents(ban){
+    if(useGAS){ const r=await gasCall('listStudents',{ban}); return (r&&r.list)||[]; }
+    await ready; let arr=[];
+    if(fdb){ const s=await fdb.ref('students').get(); if(s.exists()){ const v=s.val();
+        for(const k in v){ const p=k.split('-'); arr.push({ban:p[0],num:p[1],...v[k]}); } } }
+    else if(hasWS){ try{ const r=await window.storage.list('student:',true); if(r) for(const k of r.keys){
+        try{const v=await window.storage.get(k,true); if(v){ const p=k.replace('student:','').split('-'); arr.push({ban:p[0],num:p[1],...JSON.parse(v.value)}); }}catch(e){} } }catch(e){} }
+    else { for(const k in mem){ if(k.startsWith('student:')){ const p=k.replace('student:','').split('-'); arr.push({ban:p[0],num:p[1],...mem[k]}); } } }
+    if(ban!=null) arr=arr.filter(s=> String(s.ban)===String(ban));
+    arr.sort((a,b)=> (+a.num)-(+b.num));
+    return arr;
+  }
+  async function resetStudentPw(ban,num){
+    if(useGAS){ const r=await gasCall('resetStudentPw',{ban,num}); return !!(r&&r.ok); }
+    const rec=await getStudent(ban,num); if(!rec) return false;
+    rec.pw='7777'; rec.mustChange=true; await setStudent(ban,num,rec); return true;
+  }
+  async function setScore(ban,num,data){
+    if(useGAS){ await gasCall('setScore',{ban,num,data}); return; }
+    if(fdb){ await ready; await fdb.ref('scores/'+sanitize(ban+'-'+num)).set(data);} else { await set('score:'+ban+'-'+num, data);}
+  }
+
+  return { mode: useGAS?'gas':(useFB?'firebase':(hasWS?'shared':'memory')), getStudent, setStudent, listStudents, resetStudentPw, listScores, onScores, setScore };
+})();
+
+/* ===================== 입자모형 SVG ===================== */
+function particleSVG(state){
+  let dots='', c={solid:'#3b82f6',liquid:'#06b6d4',gas:'#f59e0b'}[state];
+  if(state==='solid'){ // 규칙적 격자, 빽빽
+    for(let r=0;r<4;r++)for(let q=0;q<4;q++){ dots+=`<circle cx="${22+q*22}" cy="${22+r*22}" r="9.5" fill="${c}"/>`; }
+  } else if(state==='liquid'){ // 가깝지만 불규칙, 꽉 찬 느낌
+    const pts=[[24,26],[46,30],[70,24],[90,34],[20,50],[44,52],[66,50],[88,56],[30,74],[54,72],[78,76],[26,94],[58,92],[84,92]];
+    pts.forEach(p=> dots+=`<circle cx="${p[0]}" cy="${p[1]}" r="8.5" fill="${c}"/>`);
+  } else { // 기체: 입자 적고 멀찍이 흩어짐 (액체와 확연히 다르게)
+    const pts=[[26,28],[86,24],[56,58],[24,88]];
+    pts.forEach(p=> dots+=`<circle cx="${p[0]}" cy="${p[1]}" r="7" fill="${c}"/>`);
+  }
+  return `<svg viewBox="0 0 112 112" width="100%" height="100%">${dots}</svg>`;
+}
+const STATE_KR={solid:'고체',liquid:'액체',gas:'기체'};
+
+/* ===================== 데스매치 문제 (PDF 27문항) ===================== */
+const QUESTIONS=[
+ {t:"고드름이 녹는다.",a:"융해",s:"icicleMelt"},
+ {t:"용광로에서 철이 녹아 쇳물이 된다.",a:"융해",s:"furnace"},
+ {t:"나뭇잎에 서리가 생긴다.",a:"승화",s:"frostLeaf"},
+ {t:"냉동실에 넣어 둔 얼음이 점점 작아진다.",a:"승화",s:"iceShrink"},
+ {t:"겨울철 그늘에 있던 눈사람이 작아진다.",a:"승화",s:"snowman"},
+ {t:"호수 주변에 안개가 생긴다.",a:"액화",s:"fog"},
+ {t:"겨울철 처마 끝에 고드름이 생긴다.",a:"응고",s:"icicleForm"},
+ {t:"목욕탕 거울에 뿌옇게 김이 서린다.",a:"액화",s:"mirror"},
+ {t:"포장에 사용된 드라이아이스가 작아진다.",a:"승화",s:"dryIce"},
+ {t:"젖은 빨래가 마른다.",a:"기화",s:"laundry"},
+ {t:"점토로 빚은 도자기의 수분을 말린다.",a:"기화",s:"pottery"},
+ {t:"차가운 컵 표면에 물방울이 맺힌다.",a:"액화",s:"coldCup"},
+ {t:"따뜻한 실내로 들어가면 안경이 뿌옇게 흐려진다.",a:"액화",s:"glasses"},
+ {t:"냉동실 벽면에 성에가 생긴다.",a:"승화",s:"freezerFrost"},
+ {t:"뜨거운 프라이팬 위에서 버터가 녹는다.",a:"융해",s:"butter"},
+ {t:"영하의 온도에서 얼어 있던 명태가 마른다.",a:"승화",s:"fish"},
+ {t:"손에 바른 손 소독제가 사라진다.",a:"기화",s:"sanitizer"},
+ {t:"아이스크림이 녹아 흘러내린다.",a:"융해",s:"iceCream"},
+ {t:"쇳물이 식어 단단한 철이 된다.",a:"응고",s:"ingot"},
+ {t:"젖은 머리카락을 머리말리개로 말린다.",a:"기화",s:"hairDry"},
+ {t:"겨울철 유리창에 성에가 생긴다.",a:"승화",s:"windowFrost"},
+ {t:"불을 붙인 양초에서 촛농이 흘러내린다.",a:"융해",s:"candle"},
+ {t:"높은 산에서 수증기가 나무에 얼어붙어 상고대가 생긴다.",a:"승화",s:"rime"},
+ {t:"흘러내린 촛농이 굳는다.",a:"응고",s:"waxHard"},
+ {t:"마그마가 굳어 바위가 된다.",a:"응고",s:"magma"},
+ {t:"물이 끓어 수증기가 된다.",a:"기화",s:"boiling"},
+ {t:"뜨거운 고깃국이 식으면 기름이 굳는다.",a:"응고",s:"soup"}
+];
+const STATES=["융해","응고","기화","액화","승화"];
+
+/* ===================== 현상 일러스트(SVG) ===================== */
+const SCENE=(id)=>({
+icicleMelt:`<rect x="20" y="14" width="130" height="12" rx="3" fill="#9aa7bd"/><path d="M50 26l-7 34 7 7 7-7z" fill="#bfe3ff" stroke="#5aa9e6" stroke-width="2"/><path d="M95 26l-9 46 9 9 9-9z" fill="#bfe3ff" stroke="#5aa9e6" stroke-width="2"/><circle cx="50" cy="80" r="5" fill="#5aa9e6"/><circle cx="95" cy="98" r="6" fill="#5aa9e6"/><ellipse cx="72" cy="150" rx="40" ry="7" fill="#bfe3ff"/>`,
+furnace:`<path d="M50 40h70l-12 70H62z" fill="#7a5230"/><ellipse cx="85" cy="40" rx="35" ry="12" fill="#3a2a1c"/><path d="M58 60q27 22 54 0l-7 44H65z" fill="#ff7a18"/><path d="M70 78q15 14 30 0l-4 24H74z" fill="#ffd24a"/><circle cx="85" cy="92" r="6" fill="#fff3b0"/><path d="M40 130h90" stroke="#9aa7bd" stroke-width="6" stroke-linecap="round"/>`,
+frostLeaf:`<path d="M40 120C40 60 95 35 130 38c4 40-28 86-90 82z" fill="#6fbf73"/><path d="M52 110C70 80 100 56 124 50" stroke="#2f7d3a" stroke-width="3" fill="none"/>${frostDots(8)}`,
+iceShrink:`<rect x="45" y="55" width="70" height="60" rx="8" fill="#cdeBfb" stroke="#5aa9e6" stroke-width="3"/><rect x="55" y="65" width="50" height="40" rx="6" fill="#eaf6ff" opacity=".8"/><path d="M135 40l8 8M138 60l10-4M30 50l-6-6" stroke="#bcdcf2" stroke-width="3" stroke-linecap="round"/>${frostDots(5)}`,
+snowman:`<circle cx="85" cy="118" r="34" fill="#fff" stroke="#cfe0f0" stroke-width="2"/><circle cx="85" cy="66" r="24" fill="#fff" stroke="#cfe0f0" stroke-width="2"/><circle cx="78" cy="62" r="3" fill="#334"/><circle cx="92" cy="62" r="3" fill="#334"/><path d="M85 68l14 5-14 4z" fill="#f59e0b"/><circle cx="85" cy="106" r="3" fill="#334"/><circle cx="85" cy="120" r="3" fill="#334"/>`,
+fog:`<path d="M20 120h130" stroke="#5aa9e6" stroke-width="5"/><path d="M20 132h130" stroke="#5aa9e6" stroke-width="4" opacity=".6"/>${fogLines()}<circle cx="50" cy="40" r="3" fill="#bcd"/>`,
+icicleForm:`<path d="M25 30h120v14H25z" fill="#8a5a3a"/><path d="M45 44l-6 40 6 8 6-8z" fill="#cdeBfb" stroke="#5aa9e6" stroke-width="2"/><path d="M75 44l-7 54 7 8 7-8z" fill="#cdeBfb" stroke="#5aa9e6" stroke-width="2"/><path d="M108 44l-6 42 6 8 6-8z" fill="#cdeBfb" stroke="#5aa9e6" stroke-width="2"/>${frostDots(4)}`,
+mirror:`<rect x="42" y="24" width="86" height="110" rx="10" fill="#dfeaf5" stroke="#9aa7bd" stroke-width="4"/><rect x="52" y="34" width="66" height="90" rx="6" fill="#cdd9e6" opacity=".8"/><path d="M64 70q12 -10 24 0M64 90q14 -8 28 2" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round"/>`,
+dryIce:`<rect x="48" y="60" width="64" height="48" rx="8" fill="#dCEBf7" stroke="#9bbdd6" stroke-width="3"/>${fogLines(true)}<path d="M60 56q6 -16 0 -26M84 52q8 -20 0 -32M104 56q6 -16 0 -26" stroke="#cdd9e6" stroke-width="5" fill="none" stroke-linecap="round"/>`,
+laundry:`<path d="M20 40h130" stroke="#9aa7bd" stroke-width="3"/><path d="M55 40l-12 18 14 6v44h36V64l14-6-12-18z" fill="#7fc0ff" stroke="#3b82f6" stroke-width="2"/><circle cx="50" cy="38" r="4" fill="#f59e0b"/><circle cx="120" cy="38" r="4" fill="#f59e0b"/><path d="M115 70q8 4 0 10M124 66q9 5 0 12" stroke="#cfe0f0" stroke-width="3" fill="none"/>`,
+pottery:`<path d="M62 60q23 -16 46 0c8 26 4 50-23 56-27-6-31-30-23-56z" fill="#c98a5a" stroke="#8a5a32" stroke-width="2"/><ellipse cx="85" cy="60" rx="23" ry="8" fill="#a86a3a"/><path d="M120 58q9 6 0 14M128 52q10 7 0 16" stroke="#cfe0f0" stroke-width="3" fill="none"/>`,
+coldCup:`<path d="M55 50h60l-6 70H61z" fill="#dfeefc" stroke="#5aa9e6" stroke-width="3"/><rect x="61" y="58" width="48" height="50" rx="4" fill="#bfe0ff" opacity=".7"/><circle cx="50" cy="86" r="4" fill="#5aa9e6"/><circle cx="120" cy="78" r="4" fill="#5aa9e6"/><circle cx="118" cy="100" r="5" fill="#5aa9e6"/><circle cx="52" cy="106" r="3" fill="#5aa9e6"/>`,
+glasses:`<circle cx="58" cy="80" r="26" fill="#e8f1fb" stroke="#334" stroke-width="4"/><circle cx="112" cy="80" r="26" fill="#e8f1fb" stroke="#334" stroke-width="4"/><path d="M84 76h2" stroke="#334" stroke-width="4"/><path d="M32 70l-12-8M138 70l12-8" stroke="#334" stroke-width="4" stroke-linecap="round"/><path d="M48 84q10 -8 20 0M102 84q10 -8 20 0" stroke="#fff" stroke-width="4" fill="none"/>`,
+freezerFrost:`<rect x="40" y="30" width="90" height="100" rx="10" fill="#dCEBf7" stroke="#9bbdd6" stroke-width="3"/><rect x="50" y="40" width="70" height="80" rx="6" fill="#eaf6ff"/>${frostDots(10)}`,
+butter:`<ellipse cx="85" cy="100" rx="55" ry="14" fill="#9aa7bd"/><path d="M40 96q45 18 90 0" fill="none" stroke="#7a8699" stroke-width="4"/><rect x="130" y="86" width="34" height="10" rx="5" fill="#7a8699"/><path d="M70 78l30-6 8 16-30 8z" fill="#ffd24a" stroke="#e0a92a" stroke-width="2"/><path d="M74 92q14 6 28 0" stroke="#e0a92a" stroke-width="2" fill="none"/>`,
+fish:`<path d="M40 80q35 -28 80 0-45 28-80 0z" fill="#9fb6c9" stroke="#5b7892" stroke-width="2"/><path d="M118 80l28-16v32z" fill="#7a96ad"/><circle cx="60" cy="76" r="4" fill="#223"/>${frostDots(5)}`,
+sanitizer:`<rect x="68" y="50" width="34" height="56" rx="8" fill="#bfe0ff" stroke="#3b82f6" stroke-width="2"/><rect x="76" y="38" width="18" height="14" rx="3" fill="#3b82f6"/><path d="M60 120q25 12 50 0" stroke="#9aa7bd" stroke-width="6" fill="none" stroke-linecap="round"/><circle cx="50" cy="60" r="3" fill="#7fc0ff"/><circle cx="120" cy="56" r="3" fill="#7fc0ff"/><circle cx="115" cy="78" r="3" fill="#7fc0ff"/>`,
+iceCream:`<path d="M72 70l13 60 13-60z" fill="#e8c79a" stroke="#c89a5a" stroke-width="2"/><circle cx="72" cy="62" r="16" fill="#ffd1dc"/><circle cx="98" cy="62" r="16" fill="#bfe7c8"/><circle cx="85" cy="50" r="16" fill="#fff3b0"/><path d="M70 120q6 14 0 22M96 122q5 12 0 20" stroke="#ffb6c8" stroke-width="4" fill="none" stroke-linecap="round"/>`,
+ingot:`<path d="M52 96l12-22h42l12 22z" fill="#9aa7bd" stroke="#6b7a8f" stroke-width="2"/><path d="M52 96h66v14H52z" fill="#7a8699"/><path d="M30 130h110" stroke="#cfe0f0" stroke-width="4"/><circle cx="70" cy="60" r="3" fill="#cfd9e6"/><circle cx="100" cy="56" r="3" fill="#cfd9e6"/>`,
+hairDry:`<rect x="44" y="64" width="60" height="30" rx="14" fill="#5b7892"/><path d="M104 70l24-8v32l-24-8z" fill="#7a96ad"/><rect x="60" y="92" width="16" height="30" rx="6" fill="#5b7892"/><path d="M38 72q-12 0-16 6M36 86q-12 2-15 8" stroke="#7fc0ff" stroke-width="4" fill="none" stroke-linecap="round"/>`,
+windowFrost:`<rect x="44" y="28" width="84" height="104" rx="6" fill="#e8f1fb" stroke="#8a5a3a" stroke-width="5"/><path d="M86 30v100M46 80h80" stroke="#b98a5a" stroke-width="4"/>${frostDots(9)}`,
+candle:`<rect x="74" y="60" width="22" height="60" rx="3" fill="#ffe9b0" stroke="#e0c070" stroke-width="2"/><rect x="83" y="48" width="4" height="14" fill="#7a6a3a"/><path d="M85 32q10 12 0 18q-10-6 0-18z" fill="#ff9b2f"/><path d="M85 38q5 6 0 10q-5-4 0-10z" fill="#ffd24a"/><path d="M74 96q-8 8 -4 24M96 100q9 6 4 22" stroke="#f0d488" stroke-width="5" fill="none" stroke-linecap="round"/>`,
+rime:`<path d="M30 120q40 -50 110 -40" stroke="#7a5a3a" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M60 100l-12-12M90 82l-10-14M118 76l-8-16" stroke="#8a6a4a" stroke-width="4" stroke-linecap="round"/>${frostDots(9)}`,
+waxHard:`<path d="M55 110q30 -10 60 0l-6 18H61z" fill="#ffe9b0" stroke="#e0c070" stroke-width="2"/><path d="M64 110q4 -30 21 -34q17 4 21 34z" fill="#fff3d0"/><path d="M40 132h90" stroke="#9aa7bd" stroke-width="5"/>`,
+magma:`<path d="M30 120q30 -16 60 -8t60 8z" fill="#5b4a40"/><path d="M50 110q12 -34 35 -30t35 30q-35 14 -70 0z" fill="#ff6a2a"/><path d="M62 100q10 -20 23 -18t23 18q-23 10 -46 0z" fill="#ffb02a"/><circle cx="85" cy="92" r="6" fill="#fff0b0"/>`,
+boiling:`<path d="M48 70h74l-8 50H56z" fill="#9aa7bd" stroke="#6b7a8f" stroke-width="2"/><rect x="42" y="64" width="86" height="10" rx="4" fill="#7a8699"/><path d="M58 60q8 -18 0 -30M85 56q9 -22 0 -34M112 60q8 -18 0 -30" stroke="#cfe0f0" stroke-width="5" fill="none" stroke-linecap="round"/><circle cx="70" cy="96" r="4" fill="#cfe0f0"/><circle cx="98" cy="100" r="4" fill="#cfe0f0"/>`,
+soup:`<path d="M40 78h90q-6 40 -45 40T40 78z" fill="#c98a4a" stroke="#8a5a2a" stroke-width="2"/><ellipse cx="85" cy="78" rx="45" ry="10" fill="#e0b070"/><ellipse cx="74" cy="76" rx="8" ry="3" fill="#fff3c0"/><ellipse cx="98" cy="80" rx="7" ry="3" fill="#fff3c0"/><path d="M30 122h110" stroke="#9aa7bd" stroke-width="5"/>`
+}[id] || `<circle cx="85" cy="80" r="40" fill="#dfeaf5"/>`);
+
+function frostDots(n){ let s='';const pts=[[40,50],[70,40],[110,46],[130,70],[50,80],[90,70],[120,96],[60,108],[100,110],[38,96]]; for(let i=0;i<n;i++){const p=pts[i%pts.length]; s+=`<g stroke="#bfe3ff" stroke-width="2.5" stroke-linecap="round"><path d="M${p[0]-5} ${p[1]}h10M${p[0]} ${p[1]-5}v10M${p[0]-3.5} ${p[1]-3.5}l7 7M${p[0]+3.5} ${p[1]-3.5}l-7 7"/></g>`;} return s; }
+function fogLines(up){ let y=up?40:96; let s=''; for(let i=0;i<3;i++){ s+=`<path d="M52 ${y-i*10}q10 -8 20 0t20 0t20 0" stroke="#cdd9e6" stroke-width="4" fill="none" stroke-linecap="round" opacity="${0.8-i*0.2}"/>`; } return s; }
+function sceneSVG(id){ return `<svg viewBox="0 0 170 160" width="100%" height="100%">${SCENE(id)}</svg>`; }
+
+/* ===================== 상태 / 화면 전환 ===================== */
+let USER=null; // {ban,num,name}
+const $=s=>document.querySelector(s); const $$=s=>[...document.querySelectorAll(s)];
+function show(page){
+  ['login','missions','dm'].forEach(p=> $('#page-'+p).classList.add('hidden'));
+  $('#page-'+page).classList.remove('hidden');
+}
+function setTab(n){ $$('.tab').forEach(t=> t.classList.toggle('active', t.dataset.go==String(n))); }
+
+/* ===================== 로그인 ===================== */
+$('#btnLogin').onclick = async ()=>{
+  const ban=$('#inBan').value, num=$('#inNum').value, name=$('#inName').value.trim(), pw=$('#inPw').value.trim();
+  const msg=$('#loginMsg'); msg.className='msg err';
+  if(!ban||!num||!name){ msg.textContent='반·번호·이름을 모두 고르고 입력하세요.'; return; }
+  if(!pw){ msg.textContent='비밀번호를 입력하세요. (처음에는 7777)'; return; }
+  msg.className='msg'; msg.textContent='확인 중...';
+  let rec = await DB.getStudent(ban,num);
+  if(!rec){
+    if(pw!=='7777'){ msg.className='msg err'; msg.textContent='처음 입장할 때 비밀번호는 7777 이에요.'; return; }
+    rec={pw:'7777',name,mustChange:true}; await DB.setStudent(ban,num,rec);
+  } else {
+    if(rec.pw!==pw){ msg.className='msg err'; msg.textContent='비밀번호가 맞지 않아요.'; return; }
+    if(rec.name!==name){ rec.name=name; await DB.setStudent(ban,num,rec); } // 이름 갱신 허용
+  }
+  msg.textContent='';
+  USER={ban,num,name};
+  $('#uName').textContent=`${ban}반 ${num}번 ${name}`;
+  $('#userArea').classList.remove('hidden'); $('#tabs').classList.remove('hidden');
+  setTab(1); show('missions'); buildMission1(); buildMission2();
+  // 처음 7777 이거나 초기화된 경우 → 바로 비번 변경(생일 4자리) 강제
+  if(rec.pw==='7777' || rec.mustChange){ openPwModal(true); }
+};
+$('#inPw').addEventListener('keydown',e=>{ if(e.key==='Enter') $('#btnLogin').click(); });
+
+$('#btnLogout').onclick = ()=>{ USER=null; $('#userArea').classList.add('hidden'); $('#tabs').classList.add('hidden'); show('login'); $('#inPw').value=''; $('#loginMsg').textContent=''; };
+
+/* ---------- 비밀번호 변경 (forced=처음/초기화 후) ---------- */
+function openPwModal(forced){
+  $('#pwOld').value=''; $('#pwNew').value=''; $('#pwMsg').textContent='';
+  $('#pwOldField').classList.toggle('hidden', !!forced);
+  $('#pwCancel').classList.toggle('hidden', !!forced);
+  if(forced){
+    $('#pwTitle').textContent='나만의 비밀번호 만들기';
+    $('#pwGuide').textContent='처음 들어왔어요! 비밀번호를 본인 생일 4자리(예: 3월 17일 → 0317)로 바꿔주세요.';
+    $('#pwNewLabel').textContent='새 비밀번호 (생일 4자리)';
+    $('#pwSave').textContent='이 비밀번호로 시작하기';
+  } else {
+    $('#pwTitle').textContent='비밀번호 변경';
+    $('#pwGuide').textContent='비밀번호는 본인 생일 4자리(예: 0317)를 추천해요.';
+    $('#pwNewLabel').textContent='새 비밀번호 (생일 4자리)';
+    $('#pwSave').textContent='저장';
+  }
+  $('#pwBack').dataset.forced = forced?'1':'';
+  $('#pwBack').classList.remove('hidden');
+}
+$('#btnChangePw').onclick=()=> openPwModal(false);
+$('#pwCancel').onclick=()=> $('#pwBack').classList.add('hidden');
+$('#pwSave').onclick= async ()=>{
+  const m=$('#pwMsg'); m.className='msg err';
+  const forced = $('#pwBack').dataset.forced==='1';
+  const rec=await DB.getStudent(USER.ban,USER.num);
+  if(!rec){ m.textContent='학생 정보를 찾을 수 없어요.'; return; }
+  if(!forced && rec.pw!==$('#pwOld').value.trim()){ m.textContent='현재 비밀번호가 맞지 않아요.'; return; }
+  const np=$('#pwNew').value.trim();
+  if(!/^\d{4}$/.test(np)){ m.textContent='생일 4자리 숫자로 정해주세요. (예: 0317)'; return; }
+  if(np==='7777'){ m.textContent='7777 말고 본인 생일 4자리로 정해주세요.'; return; }
+  rec.pw=np; rec.mustChange=false; await DB.setStudent(USER.ban,USER.num,rec);
+  m.className='msg ok'; m.textContent='완료! 이제 이 비밀번호로 로그인해요.';
+  setTimeout(()=> $('#pwBack').classList.add('hidden'), 900);
+};
+
+/* ---------- 셀렉트 채우기 ---------- */
+function fillSelect(sel, max, suffix){
+  sel.innerHTML='<option value="">선택</option>';
+  for(let i=1;i<=max;i++){ const o=document.createElement('option'); o.value=i; o.textContent=i+suffix; sel.appendChild(o); }
+}
+fillSelect($('#inBan'),BAN_MAX,'반');
+fillSelect($('#inNum'),NUM_MAX,'번');
+
+/* ---------- 교사 대시보드 ---------- */
+$('#btnTeacher').onclick=()=>{
+  $('#tPin').value=''; $('#tMsg').textContent='';
+  $('#tLogin').classList.remove('hidden'); $('#tPanel').classList.add('hidden');
+  $('#tBack').classList.remove('hidden');
+};
+$('#tCancel').onclick=()=> $('#tBack').classList.add('hidden');
+$('#tClose').onclick=()=> $('#tBack').classList.add('hidden');
+function fillTeacherBan(){
+  const sel=$('#tBan'); sel.innerHTML='<option value="all">전체 반</option>';
+  for(let i=1;i<=BAN_MAX;i++){ const o=document.createElement('option'); o.value=i; o.textContent=i+'반'; sel.appendChild(o); }
+}
+$('#tEnter').onclick=async ()=>{
+  const entered=$('#tPin').value.trim();
+  const h=await sha256(entered);
+  if(h===null){ $('#tMsg').className='msg err'; $('#tMsg').textContent='이 기능은 HTTPS(또는 깃허브 페이지)에서만 동작해요.'; return; }
+  if(h!==TEACHER_PIN_HASH){ $('#tMsg').className='msg err'; $('#tMsg').textContent='PIN이 맞지 않아요.'; return; }
+  $('#tLogin').classList.add('hidden'); $('#tPanel').classList.remove('hidden');
+  fillTeacherBan(); $('#tBan').value='all';
+  setTeacherSub('scores'); loadTeacherScores();
+};
+$('#tPin').addEventListener('keydown',e=>{ if(e.key==='Enter') $('#tEnter').click(); });
+
+let teacherSub='scores';
+function setTeacherSub(s){
+  teacherSub=s;
+  $$('.tsubbtn').forEach(b=> b.classList.toggle('active', b.dataset.sub===s));
+  $('#tScoresView').classList.toggle('hidden', s!=='scores');
+  $('#tPwView').classList.toggle('hidden', s!=='pw');
+}
+$$('.tsubbtn').forEach(b=> b.onclick=()=>{ setTeacherSub(b.dataset.sub); b.dataset.sub==='scores'?loadTeacherScores():loadTeacherList(); });
+$('#tBan').onchange=()=>{ teacherSub==='scores'?loadTeacherScores():loadTeacherList(); };
+$('#tRefreshScores').onclick=loadTeacherScores;
+
+/* 제출 결과 · 랭킹 (이미 제출된 것만) */
+async function loadTeacherScores(){
+  const ban=$('#tBan').value; const box=$('#tScores'), sum=$('#tScoreSummary');
+  box.innerHTML='<p class="lead" style="margin:0">불러오는 중...</p>'; sum.innerHTML='';
+  let all=await DB.listScores();
+  let list = ban==='all'? all : all.filter(r=> String(r.ban)===String(ban));
+  const cnt=list.length;
+  const avg=cnt? (list.reduce((a,r)=>a+(+r.score||0),0)/cnt) : 0;
+  const max=cnt? Math.max(...list.map(r=>+r.score||0)) : 0;
+  sum.innerHTML=`<div class="stat"><b>${cnt}</b><small>제출 인원</small></div>
+    <div class="stat"><b>${avg.toFixed(1)}</b><small>평균 점수</small></div>
+    <div class="stat"><b>${max}</b><small>최고 점수</small></div>`;
+  renderRank(list, '#tScores', false);
+}
+
+/* 학생 비번 초기화 (특정 반 필요) */
+async function loadTeacherList(){
+  const ban=$('#tBan').value; const box=$('#tStudents');
+  if(ban==='all'){ box.innerHTML='<p class="lead" style="margin:0">초기화는 반을 하나 골라야 해요. 위에서 반을 선택하세요.</p>'; return; }
+  box.innerHTML='<p class="lead" style="margin:0">불러오는 중...</p>';
+  const list=await DB.listStudents(ban);
+  if(list.length===0){ box.innerHTML='<p class="lead" style="margin:0">아직 등록된 학생이 없어요.</p>'; return; }
+  box.innerHTML='';
+  list.forEach(s=>{
+    const row=document.createElement('div'); row.className='trow';
+    const isInit = s.pw==='7777';
+    row.innerHTML=`<div class="tinfo"><b>${s.num}번 ${escapeHtml(s.name||'')}</b>
+      <small>${isInit?'비번 7777 (미설정)':'비번 설정됨'}</small></div>`;
+    const btn=document.createElement('button'); btn.className='btn ghost sm'; btn.textContent='비번 초기화';
+    btn.onclick=async ()=>{
+      if(!confirm(`${ban}반 ${s.num}번 ${s.name} 의 비밀번호를 7777로 초기화할까요?`)) return;
+      btn.disabled=true; btn.textContent='초기화 중...';
+      await DB.resetStudentPw(ban,s.num);
+      btn.textContent='완료 ✓'; setTimeout(loadTeacherList, 600);
+    };
+    row.appendChild(btn); box.appendChild(row);
+  });
+}
+
+/* 탭 이동 */
+$$('.tab').forEach(t=> t.onclick=()=>{
+  const go=t.dataset.go; setTab(go);
+  if(go==='1') show('missions'); else show('dm');
+});
+
+/* ===================== 보상카드 ===================== */
+function reward(title, sub){
+  $('#rewardTitle').textContent=title; $('#rewardSub').textContent=sub;
+  $('#rewardMedal').innerHTML=`<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="14" r="7.5" fill="#ffd75e" stroke="#f59e0b" stroke-width="1.4"/><path d="M8 2.5l2.2 5.2M16 2.5l-2.2 5.2" stroke="#ef4444" stroke-width="2.2" stroke-linecap="round"/><path d="M9.4 14l1.8 1.8 3.4-3.6" stroke="#a85b00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>`;
+  $('#rewardBack').classList.remove('hidden');
+  burst();
+}
+$('#rewardOk').onclick=()=> $('#rewardBack').classList.add('hidden');
+function burst(){
+  const card=$('#rewardCard'); const cols=['#f7b500','#ef4444','#3b82f6','#22c55e','#06b6d4'];
+  for(let i=0;i<26;i++){ const s=document.createElement('i'); s.className='spark';
+    s.style.background=cols[i%cols.length]; s.style.left='50%'; s.style.top='30%';
+    card.appendChild(s);
+    const ang=Math.random()*Math.PI*2, dist=70+Math.random()*90;
+    s.animate([{transform:'translate(-50%,-50%) scale(1)',opacity:1},
+      {transform:`translate(${Math.cos(ang)*dist}px,${Math.sin(ang)*dist}px) scale(0)`,opacity:0}],
+      {duration:700+Math.random()*400,easing:'cubic-bezier(.2,.8,.3,1)'});
+    setTimeout(()=>s.remove(),1200);
+  }
+}
+
+/* ===================== 미션 1: 드래그앤드롭 ===================== */
+let m1placed={}; // zoneState -> particleState
+function buildMission1(){
+  m1placed={}; const tray=$('#tray'); tray.innerHTML='';
+  $$('.zone').forEach(z=>{ z.classList.remove('filled','correct','wrong'); z.querySelectorAll('.pdrop').forEach(e=>e.remove()); });
+  const order=['liquid','gas','solid']; // 섞어서 표시
+  order.forEach(st=>{
+    const c=document.createElement('div'); c.className='pcard'; c.dataset.p=st;
+    c.innerHTML=particleSVG(st)+`<span class="ptag">입자모형</span>`;
+    enableDrag(c); tray.appendChild(c);
+  });
+}
+function enableDrag(card){
+  let ghost=null, startX, startY;
+  const onDown=(e)=>{
+    if(card.classList.contains('used'))return;
+    const p=e.touches?e.touches[0]:e; startX=p.clientX; startY=p.clientY;
+    ghost=card.cloneNode(true); ghost.classList.add('dragging');
+    const r=card.getBoundingClientRect(); ghost.style.width=r.width+'px';ghost.style.height=r.height+'px';
+    ghost.style.left=r.left+'px';ghost.style.top=r.top+'px'; document.body.appendChild(ghost);
+    card.style.opacity='.4';
+    document.addEventListener('mousemove',onMove);document.addEventListener('mouseup',onUp);
+    document.addEventListener('touchmove',onMove,{passive:false});document.addEventListener('touchend',onUp);
+    e.preventDefault();
+  };
+  const onMove=(e)=>{ if(!ghost)return; const p=e.touches?e.touches[0]:e;
+    ghost.style.left=(p.clientX-ghost.offsetWidth/2)+'px'; ghost.style.top=(p.clientY-ghost.offsetHeight/2)+'px';
+    if(e.cancelable)e.preventDefault();
+    const z=zoneUnder(p.clientX,p.clientY); $$('.zone').forEach(x=>x.classList.toggle('over',x===z));
+  };
+  const onUp=(e)=>{ if(!ghost)return; const p=e.changedTouches?e.changedTouches[0]:e;
+    const z=zoneUnder(p.clientX,p.clientY);
+    $$('.zone').forEach(x=>x.classList.remove('over'));
+    if(z){ dropInto(z, card.dataset.p); card.classList.add('used'); }
+    card.style.opacity=''; ghost.remove(); ghost=null;
+    document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);
+    document.removeEventListener('touchmove',onMove);document.removeEventListener('touchend',onUp);
+  };
+  card.addEventListener('mousedown',onDown); card.addEventListener('touchstart',onDown,{passive:false});
+}
+function zoneUnder(x,y){ return $$('.zone').find(z=>{const r=z.getBoundingClientRect(); return x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom;}); }
+function dropInto(zone, pstate){
+  const zs=zone.dataset.state;
+  // 이미 있던 것 비우고 트레이로 복귀
+  zone.querySelectorAll('.pdrop').forEach(e=>e.remove());
+  if(m1placed[zs]){ const old=$$('.pcard').find(c=>c.dataset.p===m1placed[zs]); if(old) old.classList.remove('used'); }
+  m1placed[zs]=pstate;
+  const d=document.createElement('div'); d.className='pdrop'; d.style.cssText='position:absolute;inset:14px';
+  d.innerHTML=particleSVG(pstate); zone.appendChild(d); zone.classList.add('filled'); zone.classList.remove('correct','wrong');
+}
+$('#btnReset1').onclick=buildMission1;
+$('#btnCheck1').onclick=()=>{
+  if(Object.keys(m1placed).length<3){ alert('세 칸 모두 입자모형을 놓아주세요!'); return; }
+  let ok=true;
+  $$('.zone').forEach(z=>{ const zs=z.dataset.state; const correct=m1placed[zs]===zs;
+    z.classList.toggle('correct',correct); z.classList.toggle('wrong',!correct); if(!correct)ok=false; });
+  if(ok){
+    reward('최고에요!','입자모형을 모두 정확히 놓았어요 🎉');
+    $('#sd1').classList.add('done');$('#sd1').classList.remove('on');
+    $('#mission2').classList.remove('hidden'); $('#sd2').classList.add('on');
+    setTimeout(()=> $('#mission2').scrollIntoView({behavior:'smooth'}),300);
+  }
+};
+
+/* ===================== 미션 2: 화살표 + 빈칸 ===================== */
+// 삼각형 좌표(다이어그램 600x570 기준). 노드 중심.
+const N={solid:[300,80],liquid:[80,490],gas:[520,490]};
+// 6개 변화: 상태 쌍마다 서로 반대 방향 화살표 2개
+const TRANS=[
+ {f:'solid',t:'liquid',a:'융해'},
+ {f:'liquid',t:'solid',a:'응고'},
+ {f:'liquid',t:'gas',a:'기화'},
+ {f:'gas',t:'liquid',a:'액화'},
+ {f:'solid',t:'gas',a:'승화'},
+ {f:'gas',t:'solid',a:'승화'},
+];
+const ARROWC={solid:'#2f74e0',liquid:'#0a9fc0',gas:'#e08a0a'};
+function buildMission2(){
+  // 노드(고체/액체/기체) 위치를 SVG 좌표와 정확히 일치시킴
+  const nodeEl={solid:$('.node.solid'),liquid:$('.node.liquid'),gas:$('.node.gas')};
+  for(const k in N){ const e=nodeEl[k];
+    e.style.left=(N[k][0]/600*100)+'%'; e.style.top=(N[k][1]/570*100)+'%';
+    e.style.right='auto'; e.style.bottom='auto'; e.style.transform='translate(-50%,-50%)'; }
+  const svg=$('#arrowSvg');
+  // 각 화살표마다 출발 상태 색의 화살촉
+  let defs='<defs>';
+  TRANS.forEach((tr,i)=> defs+=`<marker id="ah${i}" markerWidth="11" markerHeight="11" refX="8.5" refY="5" orient="auto"><path d="M0 0L11 5L0 10z" fill="${ARROWC[tr.f]}"/></marker>`);
+  svg.innerHTML=defs+'</defs>';
+  $$('#diagram .blank').forEach(e=>e.remove());
+  const sep=34, R=64; // 두 화살표 사이 간격 / 노드에서 띄우는 거리
+  TRANS.forEach((tr,i)=>{
+    const [x1,y1]=N[tr.f], [x2,y2]=N[tr.t];
+    const dx=x2-x1, dy=y2-y1, len=Math.hypot(dx,dy), ux=dx/len, uy=dy/len;
+    const nx=-uy, ny=ux; // 각 화살표를 자기 법선 방향으로 sep만큼 밀어 → 반대편 두 줄로 분리
+    const ax=x1+ux*R+nx*sep, ay=y1+uy*R+ny*sep;
+    const bx=x2-ux*R+nx*sep, by=y2-uy*R+ny*sep;
+    const col=ARROWC[tr.f];
+    svg.insertAdjacentHTML('beforeend',
+      `<circle cx="${ax}" cy="${ay}" r="5" fill="${col}"/>`+
+      `<line x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}" stroke="${col}" stroke-width="4" marker-end="url(#ah${i})"/>`);
+    // 빈칸: 화살표 한가운데에 얹기 → 어느 방향인지 분명
+    const mx=(ax+bx)/2, my=(ay+by)/2;
+    const b=document.createElement('div'); b.className='blank';
+    b.style.left=(mx/600*100)+'%'; b.style.top=(my/570*100)+'%';
+    b.innerHTML=`<input data-i="${i}" maxlength="2" placeholder="?">`;
+    $('#diagram').appendChild(b);
+  });
+  // 단어 은행
+  const bank=$('#bank'); bank.innerHTML='';
+  ['융해','응고','기화','액화','승화'].forEach(w=>{
+    const c=document.createElement('button'); c.className='chip'; c.textContent=w;
+    c.onclick=()=>{ if(lastFocus){ lastFocus.value=w; lastFocus.classList.remove('correct','wrong'); } };
+    bank.appendChild(c);
+  });
+  let inputs=$$('#diagram .blank input');
+  inputs.forEach(inp=> inp.addEventListener('focus',()=> lastFocus=inp));
+}
+let lastFocus=null;
+$('#btnReset2').onclick=()=> $$('#diagram .blank input').forEach(i=>{i.value='';i.classList.remove('correct','wrong');});
+$('#btnCheck2').onclick=()=>{
+  const inputs=$$('#diagram .blank input'); let ok=true;
+  inputs.forEach(inp=>{ const ans=TRANS[+inp.dataset.i].a; const v=inp.value.trim();
+    const good=v===ans; inp.classList.toggle('correct',good); inp.classList.toggle('wrong',!good); if(!good)ok=false; });
+  if(ok){
+    reward('진짜, 멋져요!','상태 변화 이름을 모두 맞혔어요 ⭐');
+    $('#sd2').classList.add('done');$('#sd2').classList.remove('on');
+    $('#missionDone').classList.remove('hidden');
+    setTimeout(()=> $('#missionDone').scrollIntoView({behavior:'smooth'}),300);
+  }
+};
+$('#btnGoDM').onclick=()=>{ setTab(2); show('dm'); };
+
+/* ===================== 미션 2 노드 위치 CSS 동기화 ===================== */
+// (노드는 CSS 절대배치 사용, SVG 좌표와 시각적으로 일치하도록 위에서 계산)
+
+/* ===================== 데스매치 ===================== */
+let dm={order:[],idx:0,answers:[],score:0,timer:null,left:90,done:false};
+$('#btnStartDM').onclick=startDM;
+$('#btnRetryDM').onclick=()=>{ $('#dmResult').classList.add('hidden'); $('#dmIntro').classList.remove('hidden'); };
+
+function startDM(){
+  dm={order:shuffle([...QUESTIONS.keys()]),idx:0,answers:[],score:0,left:90,done:false,timer:null};
+  $('#dmIntro').classList.add('hidden'); $('#dmResult').classList.add('hidden'); $('#dmPlay').classList.remove('hidden');
+  $('#dmTotal').textContent=QUESTIONS.length;
+  buildAnsGrid(); renderQ();
+  dm.timer=setInterval(tick,1000); updateTimer();
+}
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+function buildAnsGrid(){
+  const g=$('#ansGrid'); g.innerHTML='';
+  STATES.forEach(s=>{ const b=document.createElement('button'); b.className='ans'; b.textContent=s;
+    b.onclick=()=>{ dm.answers[dm.idx]=s; $$('#ansGrid .ans').forEach(x=>x.classList.toggle('sel',x===b)); };
+    g.appendChild(b); });
+}
+function renderQ(){
+  const qi=dm.order[dm.idx], q=QUESTIONS[qi];
+  $('#qNo').textContent=`문제 ${dm.idx+1}`;
+  $('#qScene').innerHTML=sceneSVG(q.s);
+  $('#qText').textContent=q.t;
+  $('#dmIdx').textContent=dm.idx+1;
+  $('#dmProgress').style.width=((dm.idx)/QUESTIONS.length*100)+'%';
+  const cur=dm.answers[dm.idx];
+  $$('#ansGrid .ans').forEach(b=> b.classList.toggle('sel', b.textContent===cur));
+  $('#btnNext').textContent = dm.idx>=QUESTIONS.length-1 ? '마지막 문제' : '다음 문제 →';
+}
+$('#btnNext').onclick=()=>{
+  if(dm.idx>=QUESTIONS.length-1){ finishDM(); return; }
+  dm.idx++; renderQ();
+};
+$('#btnSubmit').onclick=()=>{ if(confirm('지금까지 푼 내용으로 제출할까요?')) finishDM(); };
+function tick(){ dm.left--; updateTimer(); if(dm.left<=0) finishDM(); }
+function updateTimer(){ const m=Math.floor(dm.left/60), s=dm.left%60;
+  $('#dmTimer').textContent=`${m}:${String(s).padStart(2,'0')}`;
+  $('#dmTimer').classList.toggle('warn', dm.left<=15);
+}
+async function finishDM(){
+  if(dm.done)return; dm.done=true; clearInterval(dm.timer);
+  // 채점
+  dm.score=0; const wrong=[];
+  dm.order.forEach((qi,i)=>{ const q=QUESTIONS[qi]; const my=dm.answers[i];
+    if(my===q.a) dm.score++; else wrong.push({q,my}); });
+  $('#dmPlay').classList.add('hidden'); $('#dmResult').classList.remove('hidden');
+  $('#resTitle').textContent = dm.score>=20?'대단해요! 🏆': dm.score>=12?'잘했어요! 👏':'끝까지 도전했어요! 💪';
+  $('#resLine').textContent = `27문제 중 ${dm.score}문제를 정확히 맞혔어요.`;
+  // 점수 저장
+  await DB.setScore(USER.ban,USER.num,{ban:USER.ban,num:USER.num,name:USER.name,score:dm.score,ts:Date.now()});
+  // 피드백
+  const fb=$('#fbList'); fb.innerHTML='';
+  if(wrong.length===0){ $('#fbLead').textContent='틀린 문제가 없어요. 완벽해요! 🎉'; }
+  else{ $('#fbLead').textContent=`${wrong.length}문제를 다시 확인해요.`;
+    wrong.forEach(w=>{ const row=document.createElement('div'); row.className='fb-row';
+      row.innerHTML=`<div class="fb-ico"><svg viewBox="0 0 170 160" width="100%" height="100%">${SCENE(w.q.s)}</svg></div>
+        <div class="fb-txt">${w.q.t}<div class="ansline">${w.my?`<span class="mine">${w.my}</span>`:'<span class="mine">미응답</span>'}<span class="corr">${w.q.a}</span></div></div>`;
+      fb.appendChild(row); });
+  }
+  startRanking();
+}
+
+/* ===================== 랭킹 (제출 후에만) ===================== */
+function startRanking(){ refreshRank(); }
+async function refreshRank(){
+  $('#rankList').innerHTML='<p class="lead" style="margin:0">불러오는 중...</p>';
+  const all = await DB.listScores();
+  const mine = USER ? all.filter(r=> String(r.ban)===String(USER.ban)) : all; // 같은 반끼리
+  renderRank(mine, '#rankList', true);
+}
+$('#btnRefreshRank').onclick=refreshRank;
+function renderRank(list, sel, markMe){
+  list = (list||[]).slice().sort((a,b)=> b.score-a.score || a.ts-b.ts);
+  const box=$(sel); box.innerHTML='';
+  if(list.length===0){ box.innerHTML='<p class="lead" style="margin:0">아직 제출한 친구가 없어요.</p>'; return; }
+  list.slice(0,30).forEach((r,i)=>{
+    const me = markMe && USER && r.ban==USER.ban && r.num==USER.num;
+    const cls = i===0?'gold':i===1?'silver':i===2?'bronze':'';
+    const row=document.createElement('div'); row.className='rank-row '+cls+(me?' me':'');
+    row.innerHTML=`<div class="pos">${i+1}</div>
+      <div class="rname">${escapeHtml(r.name)}<small>${r.ban}반 ${r.num}번</small>${me?' <small style="color:var(--gas)">나</small>':''}</div>
+      <div class="rscore">${r.score}점</div>`;
+    box.appendChild(row);
+  });
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* 시작 화면 */
+show('login');
+console.log('저장소 모드:', DB.mode);
+</script>
+</body>
+</html>
