@@ -992,7 +992,9 @@ function renderQ(){
   $('#dmProgress').style.width=((dm.idx)/QUESTIONS.length*100)+'%';
   const cur=dm.answers[dm.idx];
   $$('#ansGrid .ans').forEach(b=> b.classList.toggle('sel', b.textContent===cur));
-  $('#btnNext').textContent = dm.idx>=QUESTIONS.length-1 ? '마지막 문제' : '다음 문제 →';
+  const last = dm.idx>=QUESTIONS.length-1;
+  $('#btnNext').classList.toggle('hidden', last);   // 마지막 문제에서는 '다음 문제' 숨김 → 최종 제출만
+  $('#btnNext').textContent = '다음 문제 →';
 }
 $('#btnNext').onclick=()=>{
   if(dm.idx>=QUESTIONS.length-1){ finishDM(); return; }
