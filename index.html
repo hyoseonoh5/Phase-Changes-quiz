@@ -449,16 +449,22 @@ const NUM_MAX = 32;   // 1~32번
    Google Apps Script 웹앱 URL  (배포 후 받은 .../exec 주소를 붙여넣으세요)
    비워두면 미리보기용 로컬 모드로 동작합니다.
 ===================================================================== */
-const GAS_URL = "";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbydhWc3gqhw8JEGM7Hmf7PE_0S3_mOKXoCNrn0h8gfUF-SHvfQSvuzsX8VShPomm2IO/exec";
 
 const DB = (() => {
   const useGAS = !!GAS_URL;
   async function gasCall(action, payload){
+    let res;
     try{
-      const res = await fetch(GAS_URL, { method:'POST', body: JSON.stringify({action, ...payload}) });
-      const data = await res.json();
-      return data;
-    }catch(e){ console.error('GAS 통신 오류', e); return null; }
+      res = await fetch(GAS_URL, { method:'POST', body: JSON.stringify({action, ...payload}) });
+    }catch(e){ throw new Error('서버에 연결할 수 없어요. (인터넷/주소 확인)'); }
+    if(!res.ok) throw new Error('서버 응답 오류 ('+res.status+')');
+    const text = await res.text();
+    let data;
+    try{ data = JSON.parse(text); }
+    catch(e){ throw new Error('서버가 올바른 응답을 주지 않았어요. 배포 권한을 "모든 사용자"로 했는지 확인하세요.'); }
+    if(data && data.error) throw new Error('서버 오류: '+data.error);
+    return data;
   }
   const useFB = FIREBASE_CONFIG && FIREBASE_CONFIG.databaseURL;
   let fdb = null, ready = Promise.resolve();
@@ -627,6 +633,7 @@ function sceneSVG(id){ return `<svg viewBox="0 0 170 160" width="100%" height="1
 
 /* ===================== 상태 / 화면 전환 ===================== */
 let USER=null; // {ban,num,name}
+let CURRENT_REC=null; // 로그인한 학생의 현재 기록 (서버 재조회 없이 사용)
 const $=s=>document.querySelector(s); const $$=s=>[...document.querySelectorAll(s)];
 function show(page){
   ['login','missions','dm'].forEach(p=> $('#page-'+p).classList.add('hidden'));
@@ -641,16 +648,21 @@ $('#btnLogin').onclick = async ()=>{
   if(!ban||!num||!name){ msg.textContent='반·번호·이름을 모두 고르고 입력하세요.'; return; }
   if(!pw){ msg.textContent='비밀번호를 입력하세요. (처음에는 7777)'; return; }
   msg.className='msg'; msg.textContent='확인 중...';
-  let rec = await DB.getStudent(ban,num);
-  if(!rec){
-    if(pw!=='7777'){ msg.className='msg err'; msg.textContent='처음 입장할 때 비밀번호는 7777 이에요.'; return; }
-    rec={pw:'7777',name,mustChange:true}; await DB.setStudent(ban,num,rec);
-  } else {
-    if(rec.pw!==pw){ msg.className='msg err'; msg.textContent='비밀번호가 맞지 않아요.'; return; }
-    if(rec.name!==name){ rec.name=name; await DB.setStudent(ban,num,rec); } // 이름 갱신 허용
+  let rec;
+  try{
+    rec = await DB.getStudent(ban,num);
+    if(!rec){
+      if(pw!=='7777'){ msg.className='msg err'; msg.textContent='처음 입장할 때 비밀번호는 7777 이에요.'; return; }
+      rec={pw:'7777',name,mustChange:true}; await DB.setStudent(ban,num,rec);
+    } else {
+      if(rec.pw!==pw){ msg.className='msg err'; msg.textContent='비밀번호가 맞지 않아요.'; return; }
+      if(rec.name!==name){ rec.name=name; await DB.setStudent(ban,num,rec); } // 이름 갱신 허용
+    }
+  }catch(err){
+    msg.className='msg err'; msg.textContent=err.message; return;
   }
   msg.textContent='';
-  USER={ban,num,name};
+  USER={ban,num,name}; CURRENT_REC=rec;
   $('#uName').textContent=`${ban}반 ${num}번 ${name}`;
   $('#userArea').classList.remove('hidden'); $('#tabs').classList.remove('hidden');
   setTab(1); show('missions'); buildMission1(); buildMission2();
@@ -685,13 +697,22 @@ $('#pwCancel').onclick=()=> $('#pwBack').classList.add('hidden');
 $('#pwSave').onclick= async ()=>{
   const m=$('#pwMsg'); m.className='msg err';
   const forced = $('#pwBack').dataset.forced==='1';
-  const rec=await DB.getStudent(USER.ban,USER.num);
-  if(!rec){ m.textContent='학생 정보를 찾을 수 없어요.'; return; }
-  if(!forced && rec.pw!==$('#pwOld').value.trim()){ m.textContent='현재 비밀번호가 맞지 않아요.'; return; }
   const np=$('#pwNew').value.trim();
   if(!/^\d{4}$/.test(np)){ m.textContent='생일 4자리 숫자로 정해주세요. (예: 0317)'; return; }
   if(np==='7777'){ m.textContent='7777 말고 본인 생일 4자리로 정해주세요.'; return; }
-  rec.pw=np; rec.mustChange=false; await DB.setStudent(USER.ban,USER.num,rec);
+  try{
+    let rec = CURRENT_REC;
+    if(!forced){
+      // 일반 변경: 현재 비번 확인을 위해 최신 기록 조회
+      rec = await DB.getStudent(USER.ban,USER.num);
+      if(!rec){ m.textContent='학생 정보를 찾을 수 없어요.'; return; }
+      if(rec.pw!==$('#pwOld').value.trim()){ m.textContent='현재 비밀번호가 맞지 않아요.'; return; }
+    }
+    rec = rec || {name:USER.name};
+    rec.name=USER.name; rec.pw=np; rec.mustChange=false;
+    await DB.setStudent(USER.ban,USER.num,rec);
+    CURRENT_REC=rec;
+  }catch(err){ m.textContent=err.message; return; }
   m.className='msg ok'; m.textContent='완료! 이제 이 비밀번호로 로그인해요.';
   setTimeout(()=> $('#pwBack').classList.add('hidden'), 900);
 };
@@ -742,7 +763,9 @@ $('#tRefreshScores').onclick=loadTeacherScores;
 async function loadTeacherScores(){
   const ban=$('#tBan').value; const box=$('#tScores'), sum=$('#tScoreSummary');
   box.innerHTML='<p class="lead" style="margin:0">불러오는 중...</p>'; sum.innerHTML='';
-  let all=await DB.listScores();
+  let all;
+  try{ all=await DB.listScores(); }
+  catch(err){ sum.innerHTML=''; box.innerHTML='<p class="msg err" style="margin:0">'+err.message+'</p>'; return; }
   let list = ban==='all'? all : all.filter(r=> String(r.ban)===String(ban));
   const cnt=list.length;
   const avg=cnt? (list.reduce((a,r)=>a+(+r.score||0),0)/cnt) : 0;
@@ -758,7 +781,9 @@ async function loadTeacherList(){
   const ban=$('#tBan').value; const box=$('#tStudents');
   if(ban==='all'){ box.innerHTML='<p class="lead" style="margin:0">초기화는 반을 하나 골라야 해요. 위에서 반을 선택하세요.</p>'; return; }
   box.innerHTML='<p class="lead" style="margin:0">불러오는 중...</p>';
-  const list=await DB.listStudents(ban);
+  let list;
+  try{ list=await DB.listStudents(ban); }
+  catch(err){ box.innerHTML='<p class="msg err" style="margin:0">'+err.message+'</p>'; return; }
   if(list.length===0){ box.innerHTML='<p class="lead" style="margin:0">아직 등록된 학생이 없어요.</p>'; return; }
   box.innerHTML='';
   list.forEach(s=>{
@@ -770,8 +795,8 @@ async function loadTeacherList(){
     btn.onclick=async ()=>{
       if(!confirm(`${ban}반 ${s.num}번 ${s.name} 의 비밀번호를 7777로 초기화할까요?`)) return;
       btn.disabled=true; btn.textContent='초기화 중...';
-      await DB.resetStudentPw(ban,s.num);
-      btn.textContent='완료 ✓'; setTimeout(loadTeacherList, 600);
+      try{ await DB.resetStudentPw(ban,s.num); btn.textContent='완료 ✓'; setTimeout(loadTeacherList, 600); }
+      catch(err){ btn.disabled=false; btn.textContent='비번 초기화'; alert(err.message); }
     };
     row.appendChild(btn); box.appendChild(row);
   });
@@ -989,7 +1014,8 @@ async function finishDM(){
   $('#resTitle').textContent = dm.score>=20?'대단해요! 🏆': dm.score>=12?'잘했어요! 👏':'끝까지 도전했어요! 💪';
   $('#resLine').textContent = `27문제 중 ${dm.score}문제를 정확히 맞혔어요.`;
   // 점수 저장
-  await DB.setScore(USER.ban,USER.num,{ban:USER.ban,num:USER.num,name:USER.name,score:dm.score,ts:Date.now()});
+  try{ await DB.setScore(USER.ban,USER.num,{ban:USER.ban,num:USER.num,name:USER.name,score:dm.score,ts:Date.now()}); }
+  catch(err){ $('#resLine').textContent += ` (점수 저장 실패: ${err.message})`; }
   // 피드백
   const fb=$('#fbList'); fb.innerHTML='';
   if(wrong.length===0){ $('#fbLead').textContent='틀린 문제가 없어요. 완벽해요! 🎉'; }
@@ -1006,7 +1032,9 @@ async function finishDM(){
 function startRanking(){ refreshRank(); }
 async function refreshRank(){
   $('#rankList').innerHTML='<p class="lead" style="margin:0">불러오는 중...</p>';
-  const all = await DB.listScores();
+  let all;
+  try{ all = await DB.listScores(); }
+  catch(err){ $('#rankList').innerHTML='<p class="msg err" style="margin:0">'+err.message+'</p>'; return; }
   const mine = USER ? all.filter(r=> String(r.ban)===String(USER.ban)) : all; // 같은 반끼리
   renderRank(mine, '#rankList', true);
 }
